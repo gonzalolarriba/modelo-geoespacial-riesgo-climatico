@@ -1,0 +1,9 @@
+DATA/
+venv/
+tmp/
+output/
+outputs/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+desktop.ini
