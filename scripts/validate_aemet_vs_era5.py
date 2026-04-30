@@ -17,6 +17,20 @@ PROV_MAP = {
     "ES522": "CASTELLON",
     "ES523": "VALENCIA",
 }
+STATION_MUNICIPALITY_OVERRIDES = {
+    # AEMET labels this station as CASTELLO DE LA PLANA. In the cached spatial
+    # assignment it had been joined to Onda, which distorted the ERA5 contrast.
+    "8501": {
+        "municipio": "Castell\u00f3 de la Plana/Castell\u00f3n de la Plana",
+        "CODNUT3": "ES522",
+        "CODNUT3_prov": "ES522",
+    },
+    "8058X": {
+        "municipio": "Oliva",
+        "CODNUT3": "ES523",
+        "CODNUT3_prov": "ES523",
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,6 +67,12 @@ def parse_args() -> argparse.Namespace:
             "Lista opcional de indicativos AEMET separados por comas. "
             "Si no se indica, el script selecciona una estacion por provincia."
         ),
+    )
+    parser.add_argument(
+        "--chunk-days",
+        type=int,
+        default=31,
+        help="Numero maximo de dias por peticion diaria a AEMET.",
     )
     return parser.parse_args()
 
@@ -166,11 +186,14 @@ def select_stations(
             )
         return selected
 
-    gdf_prov = gdf_cv.dissolve(by="CODNUT3").reset_index()
-    gdf_prov["prov_name"] = gdf_prov["CODNUT3"].map(PROV_MAP)
+    # Keep only province geometry here. If municipal columns from the dissolved
+    # layer remain on the left side of the nearest join, they can overwrite the
+    # actual station municipality and corrupt the ERA5 merge.
+    gdf_prov = gdf_cv[["CODNUT3", "geometry"]].dissolve(by="CODNUT3").reset_index()
+    gdf_prov["CODNUT3_prov"] = gdf_prov["CODNUT3"]
     gdf_prov["rep_point"] = gdf_prov.representative_point()
     gdf_prov = gpd.GeoDataFrame(
-        gdf_prov.drop(columns="geometry"),
+        gdf_prov[["CODNUT3_prov", "rep_point"]],
         geometry=gdf_prov["rep_point"],
         crs="EPSG:4326",
     ).drop(columns="rep_point")
@@ -179,12 +202,12 @@ def select_stations(
     prov_proj = gdf_prov.to_crs(25830)
 
     selected_parts = []
-    for codnut3 in sorted(gdf_prov["CODNUT3"].dropna().unique()):
+    for codnut3 in sorted(gdf_prov["CODNUT3_prov"].dropna().unique()):
         station_subset = stations_proj[stations_proj["CODNUT3"] == codnut3].copy()
         if station_subset.empty:
             continue
 
-        target = prov_proj.loc[prov_proj["CODNUT3"] == codnut3].copy()
+        target = prov_proj.loc[prov_proj["CODNUT3_prov"] == codnut3].copy()
         nearest = gpd.sjoin_nearest(
             target,
             station_subset[
@@ -208,13 +231,6 @@ def select_stations(
 
     selected = pd.concat(selected_parts, ignore_index=True)
     selected = gpd.GeoDataFrame(selected, geometry="geometry", crs="EPSG:4326")
-    selected = selected.rename(
-        columns={
-            "municipio_right": "municipio",
-            "CODNUT3_right": "CODNUT3",
-            "CODNUT3_left": "CODNUT3_prov",
-        }
-    )
     selected = selected[
         [
             "indicativo",
@@ -228,10 +244,40 @@ def select_stations(
             "geometry",
         ]
     ].copy()
+    selected = apply_station_municipality_overrides(selected)
     return selected
 
 
-def fetch_daily_station_data(
+def apply_station_municipality_overrides(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["indicativo"] = df["indicativo"].astype(str)
+    for station_id, values in STATION_MUNICIPALITY_OVERRIDES.items():
+        mask = df["indicativo"] == station_id
+        if not mask.any():
+            continue
+        for col, value in values.items():
+            if col not in df.columns:
+                df[col] = pd.NA
+            df.loc[mask, col] = value
+    return df
+
+
+def date_chunks(start: str, end: str, chunk_days: int) -> Iterable[tuple[str, str]]:
+    start_date = pd.Timestamp(start).normalize()
+    end_date = pd.Timestamp(end).normalize()
+    if end_date < start_date:
+        raise ValueError("La fecha final no puede ser anterior a la inicial.")
+    if chunk_days < 1:
+        raise ValueError("--chunk-days debe ser mayor o igual que 1.")
+
+    current = start_date
+    while current <= end_date:
+        chunk_end = min(current + pd.Timedelta(days=chunk_days - 1), end_date)
+        yield current.strftime("%Y-%m-%d"), chunk_end.strftime("%Y-%m-%d")
+        current = chunk_end + pd.Timedelta(days=1)
+
+
+def fetch_daily_station_chunk(
     station_id: str, start: str, end: str, api_key: str
 ) -> pd.DataFrame:
     endpoint = (
@@ -258,16 +304,51 @@ def fetch_daily_station_data(
     return df
 
 
+def fetch_daily_station_data(
+    station_id: str, start: str, end: str, api_key: str, chunk_days: int
+) -> pd.DataFrame:
+    parts = []
+    for chunk_start, chunk_end in date_chunks(start, end, chunk_days):
+        df_chunk = fetch_daily_station_chunk(
+            station_id,
+            chunk_start,
+            chunk_end,
+            api_key,
+        )
+        if not df_chunk.empty:
+            parts.append(df_chunk)
+
+    if not parts:
+        return pd.DataFrame()
+
+    return (
+        pd.concat(parts, ignore_index=True)
+        .drop_duplicates(subset=["indicativo", "fecha"])
+        .sort_values(["indicativo", "fecha"])
+        .reset_index(drop=True)
+    )
+
+
 def build_validation_table(
     selected_stations: gpd.GeoDataFrame,
     df_municipios: pd.DataFrame,
     start: str,
     end: str,
     api_key: str,
+    chunk_days: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    selected_stations = selected_stations.copy()
+    selected_stations["indicativo"] = selected_stations["indicativo"].astype(str)
+
     all_daily = []
     for station_id in selected_stations["indicativo"].tolist():
-        df_station = fetch_daily_station_data(station_id, start, end, api_key)
+        df_station = fetch_daily_station_data(
+            str(station_id),
+            start,
+            end,
+            api_key,
+            chunk_days,
+        )
         if not df_station.empty:
             all_daily.append(df_station)
         else:
@@ -309,6 +390,8 @@ def build_validation_table(
             df_aemet = df_aemet.drop(columns=[meta_col])
         else:
             df_aemet = df_aemet.rename(columns={meta_col: col})
+
+    df_aemet = apply_station_municipality_overrides(df_aemet)
 
     era5_subset = df_municipios[
         ["municipio", "fecha", "precip_total_dia", "temp_media_dia"]
@@ -404,6 +487,7 @@ def main() -> None:
         start=args.start,
         end=args.end,
         api_key=api_key,
+        chunk_days=args.chunk_days,
     )
     df_metrics = build_metrics(df_compare)
 
