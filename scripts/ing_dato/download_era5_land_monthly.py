@@ -1,12 +1,9 @@
-from pathlib import Path
 import cdsapi
+from pathlib import Path
 
-# =========================
-# Descarga de datos de era5_land 
-# =========================
 DATASET = "reanalysis-era5-land"
 
-YEARS = ["2019","2020", "2021", "2022", "2023", "2024"]
+YEARS = ["2019", "2020", "2021", "2022", "2023", "2024"]
 MONTHS = [f"{m:02d}" for m in range(1, 13)]
 
 VARIABLES = [
@@ -16,19 +13,14 @@ VARIABLES = [
     "10m_v_component_of_wind",
 ]
 
-AREA = [40.90, -1.75, 37.70, 0.80]  # N, W, S, E  -> Comunidad Valenciana aprox.
+AREA = [40.90, -1.75, 37.70, 0.80]  # N, W, S, E - Comunidad Valenciana aprox.
 
-RAW_DIR = Path("DATA/RAW")
+ROOT = Path(__file__).resolve().parents[2]
+RAW_DIR = ROOT / "DATA" / "RAW"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-# =========================
-# Cliente CDS
-# =========================
 client = cdsapi.Client()
 
-# =========================
-# Descarga mensual
-# =========================
 for year in YEARS:
     for month in MONTHS:
         out_path = RAW_DIR / f"era5_land_cv_{year}_{month}.nc"

@@ -1,7 +1,8 @@
-from pathlib import Path
 import cdsapi
+from pathlib import Path
 
-out_path = Path("data/raw/era5_land_cv_2024_01.nc")
+ROOT = Path(__file__).resolve().parents[2]
+out_path = ROOT / "DATA" / "RAW" / "era5_land_cv_2024_01.nc"
 out_path.parent.mkdir(parents=True, exist_ok=True)
 
 client = cdsapi.Client()

@@ -7,7 +7,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = ROOT / "output" / "pdf"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 PDF_PATH = OUTPUT_DIR / "app_repo_summary_one_page.pdf"
@@ -130,7 +130,7 @@ def build_story():
                 "Create and activate a Python virtual environment.",
                 "Install packages from `requirements.txt`.",
                 "Set up CDS API credentials if you want to download ERA5-Land data.",
-                "Run `scripts/download_era5_land_monthly.py`, `scripts/read_era5_land_basic.py`, and `scripts/merge_era5_land_csvs.py`.",
+                "Run `scripts/ing_dato/download_era5_land_monthly.py`, `scripts/ing_dato/read_era5_land_basic.py`, and `scripts/ing_dato/merge_era5_land_csvs.py`.",
                 "Open the notebooks in order: `notebook_1_ing_dato.ipynb` through `notebook_4_an_negocio.ipynb`.",
             ],
             bullet,

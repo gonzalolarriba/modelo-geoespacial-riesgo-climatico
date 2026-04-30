@@ -14,8 +14,8 @@ Este script trabaja directamente con los ficheros descargados en
 No descarga datos de internet. Extrae de esos Excel:
 
 - poblacion total municipal
-- porcentaje de mayores de 65 aos
-- porcentaje de menores de 16 años
+- porcentaje de mayores de 65 anos
+- porcentaje de menores de 16 anos
 - indice de envejecimiento
 - renta neta media por hogar
 

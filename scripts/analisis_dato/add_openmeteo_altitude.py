@@ -21,7 +21,7 @@ import pandas as pd
 import requests
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = ROOT / "DATA" / "PROCESSED"
 
 INPUT_FILE = PROCESSED_DIR / "dataset_cv_municipios_enriched.csv"
