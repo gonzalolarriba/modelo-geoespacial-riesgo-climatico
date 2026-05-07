@@ -12,6 +12,9 @@ import requests
 
 
 BASE_URL = "https://opendata.aemet.es/opendata/api"
+DEFAULT_START = "2024-07-01"
+DEFAULT_END = "2024-10-31"
+DEFAULT_STATIONS = "8501,8058X"
 PROV_MAP = {
     "ES521": "ALICANTE",
     "ES522": "CASTELLON",
@@ -36,19 +39,25 @@ STATION_MUNICIPALITY_OVERRIDES = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Descarga una muestra pequena de AEMET OpenData y valida "
+            "Descarga una muestra acotada de AEMET OpenData y valida "
             "ERA5 municipal frente a estaciones seleccionadas de la CV."
         )
     )
     parser.add_argument(
         "--start",
-        default="2019-01-01",
-        help="Fecha inicial en formato YYYY-MM-DD.",
+        default=DEFAULT_START,
+        help=(
+            "Fecha inicial en formato YYYY-MM-DD. Por defecto reproduce "
+            "la validacion documentada en el notebook 2."
+        ),
     )
     parser.add_argument(
         "--end",
-        default="2024-12-31",
-        help="Fecha final en formato YYYY-MM-DD.",
+        default=DEFAULT_END,
+        help=(
+            "Fecha final en formato YYYY-MM-DD. Por defecto reproduce "
+            "la validacion documentada en el notebook 2."
+        ),
     )
     parser.add_argument(
         "--api-key-env",
@@ -58,14 +67,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default="DATA/PROCESSED",
-        help="Directorio donde guardar salidas CSV.",
+        help="Directorio donde guardar salidas CSV, relativo a la raiz del proyecto.",
     )
     parser.add_argument(
         "--stations",
-        default="",
+        default=DEFAULT_STATIONS,
         help=(
             "Lista opcional de indicativos AEMET separados por comas. "
-            "Si no se indica, el script selecciona una estacion por provincia."
+            "Por defecto usa las estaciones de referencia documentadas. "
+            "Si se deja vacio, el script selecciona una estacion por provincia."
         ),
     )
     parser.add_argument(
@@ -458,7 +468,7 @@ def build_metrics(df_compare: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     args = parse_args()
-    root = Path.cwd()
+    root = Path(__file__).resolve().parents[2]
     api_key = get_api_key(args.api_key_env)
     output_dir = root / args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
