@@ -228,9 +228,12 @@ print("Distancia maxima municipio-celda (m):", round(df_final["dist_metros"].max
 assert n_municipios == 542, "No estan representados los 542 municipios"
 assert n_fechas == 2192, "No estan representadas las 2192 fechas esperadas"
 assert len(df_final) == 542 * 2192, "El numero de filas no coincide con municipios x fechas"
+assert str(df_final["fecha"].min().date()) == "2019-01-01", "La fecha inicial no coincide"
+assert str(df_final["fecha"].max().date()) == "2024-12-31", "La fecha final no coincide"
 assert duplicados == 0, "Existen duplicados municipio-fecha"
 assert nulos == 0, "Existen valores nulos en el dataset municipal extendido"
 assert municipios_incompletos == 0, "Existen municipios con cobertura incompleta"
+assert df_final["dist_metros"].max() < 10000, "Hay asignaciones espaciales por encima del umbral esperado"
 
 if TMP_FILE.exists():
     TMP_FILE.unlink()

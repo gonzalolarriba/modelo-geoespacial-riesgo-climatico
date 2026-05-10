@@ -195,6 +195,17 @@ def main() -> None:
 
     if rows:
         df_out = pd.DataFrame(rows).sort_values("cod_ine").reset_index(drop=True)
+        duplicated_cod_ine = int(df_out["cod_ine"].duplicated().sum())
+        duplicated_catastro_code = int(df_out["catastro_code"].duplicated().sum())
+        nulls_total = int(df_out.isna().sum().sum())
+
+        if df_out["cod_ine"].nunique() != 542 or duplicated_cod_ine != 0:
+            raise RuntimeError("La salida Catastro no contiene 542 codigos INE unicos.")
+        if df_out["catastro_code"].nunique() != 542 or duplicated_catastro_code != 0:
+            raise RuntimeError("La salida Catastro no contiene 542 codigos Catastro unicos.")
+        if nulls_total:
+            raise RuntimeError("La salida Catastro contiene valores nulos.")
+
         df_out.to_csv(OUT_FILE, index=False)
         print(f"\n[OK] Resumen guardado en: {OUT_FILE}")
         print("Shape:", df_out.shape)

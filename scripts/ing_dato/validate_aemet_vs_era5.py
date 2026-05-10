@@ -499,7 +499,15 @@ def main() -> None:
         api_key=api_key,
         chunk_days=args.chunk_days,
     )
+    if df_compare.empty:
+        raise RuntimeError(
+            "La comparacion AEMET vs ERA5 no genero filas. Revisa estaciones, "
+            "fechas y correspondencia municipal."
+        )
+
     df_metrics = build_metrics(df_compare)
+    if df_metrics.empty or (df_metrics["n_obs"] <= 0).any():
+        raise RuntimeError("No se generaron metricas validas de contraste AEMET vs ERA5.")
 
     selected_stations.drop(columns="geometry").to_csv(
         output_dir / "aemet_selected_stations_cv.csv",

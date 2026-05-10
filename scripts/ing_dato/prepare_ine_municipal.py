@@ -605,12 +605,36 @@ def main() -> None:
     args = parser.parse_args()
 
     df = build_ine_context(args.input_dir, args.municipios_file)
+
+    duplicated_codes = int(df["cod_ine"].duplicated().sum())
+    required_non_null = [
+        "municipio",
+        "CODNUT2",
+        "CODNUT3",
+        "area_km2",
+        "cod_ine",
+        "poblacion_total",
+        "densidad_poblacion",
+        "mayores_65_pct",
+        "menores_16_pct",
+    ]
+    missing_required = int(df[required_non_null].isna().sum().sum())
+
+    if len(df) != 542 or df["municipio"].nunique() != 542:
+        raise RuntimeError("La tabla INE no contiene los 542 municipios esperados.")
+    if df["cod_ine"].nunique() != 542 or duplicated_codes != 0:
+        raise RuntimeError("La tabla INE contiene codigos INE faltantes o duplicados.")
+    if missing_required:
+        raise RuntimeError("Hay nulos en variables INE obligatorias.")
+
     args.output_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.output_file, index=False)
 
     print("Salida generada en:", args.output_file)
     print("Shape:", df.shape)
     print("Municipios:", df["municipio"].nunique())
+    print("Codigos INE:", df["cod_ine"].nunique())
+    print("Duplicados cod_ine:", duplicated_codes)
     print("Nulos por columna:")
     print(df.isna().sum())
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pandas as pd
 import xarray as xr
@@ -15,12 +16,38 @@ FLAT_DIR = PROC / "dataset_clima_cv_extended_2019_2024.csv"
 PROC.mkdir(parents=True, exist_ok=True)
 FLAT_DIR.mkdir(parents=True, exist_ok=True)
 
-files = sorted(RAW.glob("era5_land_cv_extended_*.nc"))
+YEARS = range(2019, 2025)
+MONTHS = range(1, 13)
+EXPECTED_STEMS = {
+    f"era5_land_cv_extended_{year}_{month:02d}"
+    for year in YEARS
+    for month in MONTHS
+}
+EXTENDED_MONTHLY_PATTERN = re.compile(r"^era5_land_cv_extended_\d{4}_\d{2}$")
+
+all_raw_files = sorted(RAW.glob("era5_land_cv_extended_*.nc"))
+files = [
+    path
+    for path in all_raw_files
+    if EXTENDED_MONTHLY_PATTERN.match(path.stem) and path.stem in EXPECTED_STEMS
+]
+ignored_files = sorted(set(all_raw_files) - set(files))
+missing_stems = sorted(EXPECTED_STEMS - {path.stem for path in files})
 
 if not files:
     raise FileNotFoundError(f"No se encontraron archivos .nc en {RAW}")
+if missing_stems:
+    missing_names = ", ".join(f"{stem}.nc" for stem in missing_stems)
+    raise FileNotFoundError(
+        "Faltan archivos mensuales ERA5-Land extendidos del periodo 2019-2024: "
+        f"{missing_names}"
+    )
 
 print(f"Total archivos encontrados: {len(files)}")
+if ignored_files:
+    print("Archivos RAW extendidos ignorados por no pertenecer al pipeline 2019-2024:")
+    for path in ignored_files:
+        print(f" - {path.name}")
 
 for i, era5_file in enumerate(files, start=1):
     print(f"\n[{i}/{len(files)}] Procesando: {era5_file.name}")
