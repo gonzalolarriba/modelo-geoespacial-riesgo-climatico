@@ -1,9 +1,19 @@
+"""Descarga auxiliar de un unico mes ERA5-Land para probar CDSAPI.
+
+No forma parte del pipeline completo 2019-2024. El flujo principal usa
+download_era5_land_monthly.py.
+"""
+
 import cdsapi
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 out_path = ROOT / "DATA" / "RAW" / "era5_land_cv_2024_01.nc"
 out_path.parent.mkdir(parents=True, exist_ok=True)
+
+if out_path.exists():
+    print(f"[SKIP] Ya existe: {out_path}")
+    raise SystemExit(0)
 
 client = cdsapi.Client()
 

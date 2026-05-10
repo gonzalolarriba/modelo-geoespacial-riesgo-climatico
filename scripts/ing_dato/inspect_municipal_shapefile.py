@@ -1,3 +1,9 @@
+"""Inspeccion rapida del shapefile municipal bruto del IGN.
+
+Script auxiliar de diagnostico. La construccion de la capa CV queda documentada
+y validada dentro del Notebook 1.
+"""
+
 from pathlib import Path
 
 import geopandas as gpd

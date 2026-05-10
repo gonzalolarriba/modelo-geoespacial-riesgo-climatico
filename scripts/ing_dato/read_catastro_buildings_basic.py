@@ -1,3 +1,9 @@
+"""Procesa el piloto Catastro BU usado antes del escalado completo.
+
+El pipeline completo de Catastro para los 542 municipios usa
+build_catastro_buildings_cv_summary.py.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
