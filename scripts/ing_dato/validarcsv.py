@@ -43,3 +43,21 @@ print("\nResumen de filas por mes:")
 print(counts.describe())
 print("\nNulos por columna:")
 print(null_counts.astype(int) if null_counts is not None else "Sin datos")
+
+expected_months = pd.period_range("2019-01", "2024-12", freq="M").astype(str)
+missing_months = sorted(set(expected_months) - set(counts.index))
+extra_months = sorted(set(counts.index) - set(expected_months))
+total_nulls = int(null_counts.sum()) if null_counts is not None else 0
+
+print("\nContrato minimo:")
+print("Meses esperados:", len(expected_months))
+print("Meses faltantes:", missing_months)
+print("Meses extra:", extra_months)
+print("Nulos totales:", total_nulls)
+
+assert len(counts) == len(expected_months), "El numero de meses no coincide con 2019-2024."
+assert not missing_months, "Faltan meses en el dataset consolidado."
+assert not extra_months, "Hay meses fuera del periodo 2019-2024."
+assert str(date_min.date()) == "2019-01-01", "La fecha inicial no coincide."
+assert str(date_max.date()) == "2024-12-31", "La fecha final no coincide."
+assert total_nulls == 0, "Hay valores nulos en el dataset consolidado."

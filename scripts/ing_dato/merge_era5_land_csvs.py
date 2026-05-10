@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -11,16 +12,43 @@ FLAT_DIR = PROC / "dataset_clima_cv_2019_2024.csv"
 out_file = PROC / "dataset_clima_cv_2019_2024_merge.csv"
 tmp_file = PROC / "dataset_clima_cv_2019_2024_merge.tmp.csv"
 
-files = sorted(FLAT_DIR.glob("era5_land_cv_*_flat.csv"))
-if not files:
-    files = sorted(PROC.glob("era5_land_cv_*_flat.csv"))
+YEARS = range(2019, 2025)
+MONTHS = range(1, 13)
+EXPECTED_STEMS = {
+    f"era5_land_cv_{year}_{month:02d}_flat"
+    for year in YEARS
+    for month in MONTHS
+}
+BASE_FLAT_PATTERN = re.compile(r"^era5_land_cv_\d{4}_\d{2}_flat$")
+
+all_files = sorted(FLAT_DIR.glob("era5_land_cv_*_flat.csv"))
+if not all_files:
+    all_files = sorted(PROC.glob("era5_land_cv_*_flat.csv"))
+
+files = [
+    path
+    for path in all_files
+    if BASE_FLAT_PATTERN.match(path.stem) and path.stem in EXPECTED_STEMS
+]
+ignored_files = sorted(set(all_files) - set(files))
+missing_stems = sorted(EXPECTED_STEMS - {path.stem for path in files})
 
 if not files:
     raise FileNotFoundError(
         f"No se encontraron CSVs mensuales ni en {FLAT_DIR} ni en {PROC}"
     )
+if missing_stems:
+    missing_names = ", ".join(f"{stem}.csv" for stem in missing_stems)
+    raise FileNotFoundError(
+        "Faltan CSVs mensuales ERA5-Land del periodo 2019-2024: "
+        f"{missing_names}"
+    )
 
 print(f"Archivos encontrados: {len(files)}")
+if ignored_files:
+    print("CSVs ignorados por no pertenecer al pipeline base:")
+    for path in ignored_files:
+        print(f" - {path.name}")
 
 if tmp_file.exists():
     tmp_file.unlink()
