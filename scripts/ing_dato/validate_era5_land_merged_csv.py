@@ -1,3 +1,16 @@
+"""Comprueba el contrato minimo del consolidado ERA5-Land base.
+
+Uso en el pipeline:
+    Script auxiliar de validacion de Ingenieria del Dato.
+
+Entrada:
+    DATA/PROCESSED/dataset_clima_cv_2019_2024_merge.csv
+
+Validaciones:
+    Periodo completo 2019-2024, 72 meses, fechas esperadas y ausencia de
+    nulos en el consolidado.
+"""
+
 from pathlib import Path
 
 import pandas as pd

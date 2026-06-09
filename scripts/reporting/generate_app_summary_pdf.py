@@ -1,3 +1,19 @@
+"""Genera un PDF breve de resumen del repositorio.
+
+Uso en el pipeline:
+    Script auxiliar de reporting. No forma parte de la transformacion de datos
+    ni de los notebooks principales.
+
+Entradas:
+    Metadatos y estructura local del repositorio.
+
+Salida:
+    output/pdf/app_repo_summary_one_page.pdf
+
+Notas:
+    Utilidad opcional para documentacion o revision rapida del proyecto.
+"""
+
 from pathlib import Path
 
 from reportlab.lib import colors

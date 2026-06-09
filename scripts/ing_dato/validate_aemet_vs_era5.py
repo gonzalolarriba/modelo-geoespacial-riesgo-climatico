@@ -1,3 +1,23 @@
+"""Valida ERA5-Land frente a observaciones AEMET seleccionadas.
+
+Uso en el pipeline:
+    Script auxiliar de validacion externa en Ingenieria del Dato.
+
+Entradas:
+    DATA/PROCESSED/dataset_cv_municipios.csv
+    API de AEMET OpenData configurada mediante variable de entorno o argumento.
+
+Salidas:
+    DATA/PROCESSED/aemet_selected_stations_cv.csv
+    DATA/PROCESSED/aemet_daily_raw_selected.csv
+    DATA/PROCESSED/aemet_vs_era5_daily_comparison.csv
+    DATA/PROCESSED/aemet_vs_era5_metrics.csv
+
+Notas:
+    Requiere red y API key de AEMET. Su objetivo es contrastar la coherencia
+    climatica de ERA5-Land, no sustituir la fuente principal.
+"""
+
 from __future__ import annotations
 
 import argparse

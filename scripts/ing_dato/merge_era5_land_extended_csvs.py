@@ -1,3 +1,21 @@
+"""Consolida los CSV mensuales ERA5-Land extendidos.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato. Se ejecuta despues de
+    read_era5_land_extended_basic.py.
+
+Entradas:
+    DATA/PROCESSED/dataset_clima_cv_extended_2019_2024.csv/
+    era5_land_cv_extended_YYYY_MM_flat.csv
+
+Salida:
+    DATA/PROCESSED/dataset_clima_cv_extended_2019_2024_merge.csv
+
+Notas:
+    Mantiene separado el bloque extendido para no sobrescribir el dataset
+    climatico base validado.
+"""
+
 from pathlib import Path
 import re
 

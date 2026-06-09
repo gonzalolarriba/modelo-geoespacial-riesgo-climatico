@@ -1,3 +1,21 @@
+"""Lee NetCDF ERA5-Land extendido y genera CSV mensuales planos.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato, posterior a la descarga mensual
+    ERA5-Land extendida.
+
+Entradas:
+    DATA/RAW/era5_land_extended/era5_land_cv_extended_YYYY_MM.nc
+
+Salidas:
+    DATA/PROCESSED/dataset_clima_cv_extended_2019_2024.csv/
+    era5_land_cv_extended_YYYY_MM_flat.csv
+
+Notas:
+    Calcula variables derivadas de punto de rocio, presion, escorrentia,
+    humedad de suelo y radiacion antes de la agregacion municipal.
+"""
+
 from pathlib import Path
 import re
 

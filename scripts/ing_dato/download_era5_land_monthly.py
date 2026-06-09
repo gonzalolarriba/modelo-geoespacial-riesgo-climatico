@@ -1,3 +1,20 @@
+"""Descarga mensual ERA5-Land base para 2019-2024.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato para obtener precipitacion,
+    temperatura y viento usados en el dataset base.
+
+Entradas:
+    Credenciales locales de CDSAPI configuradas fuera del repositorio.
+
+Salidas:
+    DATA/RAW/era5_land_cv_YYYY_MM.nc
+
+Notas:
+    Requiere red y acceso a Copernicus CDS. No sobrescribe meses ya
+    descargados.
+"""
+
 import cdsapi
 from pathlib import Path
 

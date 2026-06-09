@@ -1,3 +1,21 @@
+"""Descarga Catastro INSPIRE BU Buildings para los municipios de la CV.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato. Escala la descarga de Catastro
+    desde el piloto al conjunto completo de municipios.
+
+Entradas:
+    DATA/PROCESSED/ine_contexto_municipal.csv
+
+Salidas:
+    DATA/RAW/catastro/buildings/*.zip
+    DATA/PROCESSED/catastro_buildings_cv_download_status.csv
+
+Notas:
+    Requiere red. El script evita repetir descargas ya existentes y guarda un
+    estado de trazabilidad para poder auditar errores o codigos no encontrados.
+"""
+
 from __future__ import annotations
 
 import re

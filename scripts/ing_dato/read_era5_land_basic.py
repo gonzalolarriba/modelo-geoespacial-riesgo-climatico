@@ -1,3 +1,20 @@
+"""Lee NetCDF ERA5-Land base y genera CSV mensuales planos.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato, posterior a la descarga mensual
+    ERA5-Land base.
+
+Entradas:
+    DATA/RAW/era5_land_cv_YYYY_MM.nc
+
+Salidas:
+    DATA/PROCESSED/dataset_clima_cv_2019_2024.csv/era5_land_cv_YYYY_MM_flat.csv
+
+Notas:
+    Convierte unidades, calcula viento resultante y descarta registros sin
+    variables climaticas clave.
+"""
+
 from pathlib import Path
 import re
 

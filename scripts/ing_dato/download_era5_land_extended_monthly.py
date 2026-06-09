@@ -1,3 +1,20 @@
+"""Descarga mensual ERA5-Land extendido para 2019-2024.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato para ampliar el bloque climatico
+    base con variables fisicas adicionales.
+
+Entradas:
+    Credenciales locales de CDSAPI configuradas fuera del repositorio.
+
+Salidas:
+    DATA/RAW/era5_land_extended/era5_land_cv_extended_YYYY_MM.nc
+
+Notas:
+    Requiere red y acceso a Copernicus CDS. Mantiene el mismo estilo de
+    descarga mensual que el script base para que el proceso sea explicable.
+"""
+
 import cdsapi
 from pathlib import Path
 

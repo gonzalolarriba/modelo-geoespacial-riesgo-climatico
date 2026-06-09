@@ -1,3 +1,20 @@
+"""Consolida los CSV mensuales ERA5-Land base.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato. Se ejecuta despues de
+    read_era5_land_basic.py.
+
+Entradas:
+    DATA/PROCESSED/dataset_clima_cv_2019_2024.csv/era5_land_cv_YYYY_MM_flat.csv
+
+Salida:
+    DATA/PROCESSED/dataset_clima_cv_2019_2024_merge.csv
+
+Notas:
+    Filtra de forma estricta el patron esperado 2019-2024 para evitar mezclar
+    ficheros de prueba con el consolidado principal.
+"""
+
 from pathlib import Path
 import re
 

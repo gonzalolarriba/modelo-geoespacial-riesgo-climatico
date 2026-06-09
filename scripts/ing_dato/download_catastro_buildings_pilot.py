@@ -1,3 +1,20 @@
+"""Descarga piloto de Catastro BU Buildings para pocos municipios.
+
+Uso en el pipeline:
+    Script auxiliar/piloto de Ingenieria del Dato. Sirve para validar que el
+    flujo de descarga y lectura de Catastro funciona antes de escalarlo a toda
+    la Comunidad Valenciana.
+
+Entradas:
+    Lista interna acotada de municipios de prueba.
+
+Salidas:
+    DATA/RAW/catastro/buildings/*.zip
+
+Notas:
+    Requiere red. No es la descarga final usada para el dataset completo.
+"""
+
 from __future__ import annotations
 
 import re

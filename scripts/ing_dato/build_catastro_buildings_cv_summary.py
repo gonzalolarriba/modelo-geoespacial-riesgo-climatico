@@ -1,3 +1,22 @@
+"""Construye el resumen municipal completo de Catastro BU Buildings.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato, posterior a
+    download_catastro_buildings_cv.py.
+
+Entradas:
+    DATA/RAW/catastro/buildings/*.zip
+    DATA/PROCESSED/catastro_buildings_cv_download_status.csv
+
+Salidas:
+    DATA/PROCESSED/catastro_buildings_cv_summary.csv
+    DATA/PROCESSED/catastro_buildings_cv_processing_report.csv
+
+Notas:
+    No descarga datos. Lee los ZIP ya disponibles y agrega edificios,
+    viviendas, superficies y densidades a escala municipal.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

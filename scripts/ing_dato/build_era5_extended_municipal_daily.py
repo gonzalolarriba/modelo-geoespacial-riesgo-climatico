@@ -1,3 +1,21 @@
+"""Agrega ERA5-Land extendido a escala municipio-dia.
+
+Uso en el pipeline:
+    Script operativo de Ingenieria del Dato. Se ejecuta despues de leer y
+    consolidar los CSV mensuales extendidos.
+
+Entradas:
+    DATA/PROCESSED/dataset_cv_municipios.csv
+    DATA/PROCESSED/dataset_clima_cv_extended_2019_2024_merge.csv
+
+Salida:
+    DATA/PROCESSED/dataset_cv_municipios_climate_extended.csv
+
+Notas:
+    Reutiliza la asignacion municipio-celda validada en el Notebook 1 para
+    mantener coherencia espacial con el dataset base.
+"""
+
 from pathlib import Path
 
 import pandas as pd
