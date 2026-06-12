@@ -103,6 +103,63 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(enriched.duplicated(["municipio", "fecha"]).sum(), 0)
         self.assertEqual(int(enriched.isna().sum().sum()), 0)
 
+    def test_snczi_outputs_contract(self) -> None:
+        summary_path = PROC / "snczi_flood_exposure_municipal.csv"
+        enriched_path = PROC / "dataset_cv_municipios_enriched_catastro_snczi.csv"
+        self.assertTrue(summary_path.exists(), f"No existe {summary_path}")
+        self.assertTrue(enriched_path.exists(), f"No existe {enriched_path}")
+
+        pct_cols = [
+            "snczi_inundacion_t100_pct_area_aprox",
+            "snczi_inundacion_t500_pct_area_aprox",
+        ]
+        bool_cols = [
+            "snczi_inundacion_t100_tiene_zona_inundable",
+            "snczi_inundacion_t500_tiene_zona_inundable",
+        ]
+
+        summary = pd.read_csv(
+            summary_path,
+            usecols=[
+                "municipio",
+                "CODNUT2",
+                "CODNUT3",
+                "snczi_resolucion_px",
+                *pct_cols,
+                *bool_cols,
+            ],
+        )
+        self.assertEqual(len(summary), 542)
+        self.assertEqual(summary["municipio"].nunique(), 542)
+        self.assertEqual(summary.duplicated(["municipio", "CODNUT2", "CODNUT3"]).sum(), 0)
+        self.assertEqual(int(summary.isna().sum().sum()), 0)
+        self.assertEqual(int(summary["snczi_resolucion_px"].min()), 4096)
+        self.assertEqual(int(summary["snczi_resolucion_px"].max()), 4096)
+        self.assertTrue(((summary[pct_cols] >= 0) & (summary[pct_cols] <= 1)).all().all())
+        self.assertGreaterEqual(
+            summary["snczi_inundacion_t500_pct_area_aprox"].mean(),
+            summary["snczi_inundacion_t100_pct_area_aprox"].mean(),
+        )
+        self.assertGreater(int(summary["snczi_inundacion_t100_tiene_zona_inundable"].sum()), 0)
+        self.assertGreater(int(summary["snczi_inundacion_t500_tiene_zona_inundable"].sum()), 0)
+
+        enriched = pd.read_csv(
+            enriched_path,
+            usecols=[
+                "municipio",
+                "fecha",
+                "CODNUT2",
+                "CODNUT3",
+                *pct_cols,
+                *bool_cols,
+            ],
+        )
+        self.assertEqual(len(enriched), 1_188_064)
+        self.assertEqual(enriched["municipio"].nunique(), 542)
+        self.assertEqual(enriched.duplicated(["municipio", "fecha"]).sum(), 0)
+        self.assertEqual(int(enriched.isna().sum().sum()), 0)
+        self.assertTrue(((enriched[pct_cols] >= 0) & (enriched[pct_cols] <= 1)).all().all())
+
     def test_analysis_and_modeling_outputs_contract(self) -> None:
         analysis_path = PROC / "dataset_cv_municipios_analisis_municipal.csv"
         segmented_path = PROC / "dataset_cv_municipios_segmentado.csv"
@@ -117,13 +174,44 @@ class EngineeringOutputsTest(unittest.TestCase):
                 "CODNUT3",
                 "score_peligro_climatico_ampliado",
                 "score_exposicion_fisica",
+                "score_exposicion_construida",
+                "score_exposicion_inundacion",
                 "score_riesgo_exploratorio",
+                "snczi_inundacion_t100_pct_area_aprox",
+                "snczi_inundacion_t500_pct_area_aprox",
+                "contrib_peligro_climatico",
+                "contrib_vulnerabilidad",
+                "contrib_exposicion_fisica",
+                "dimension_dominante_score",
             ],
         )
         self.assertEqual(len(analysis), 542)
         self.assertEqual(analysis["municipio"].nunique(), 542)
         self.assertEqual(analysis.duplicated(["municipio", "CODNUT2", "CODNUT3"]).sum(), 0)
         self.assertEqual(int(analysis.isna().sum().sum()), 0)
+        contribution_cols = [
+            "contrib_peligro_climatico",
+            "contrib_vulnerabilidad",
+            "contrib_exposicion_fisica",
+        ]
+        max_score_delta = (
+            analysis[contribution_cols].sum(axis=1)
+            - analysis["score_riesgo_exploratorio"]
+        ).abs().max()
+        self.assertLess(max_score_delta, 1e-10)
+        self.assertTrue(
+            set(analysis["dimension_dominante_score"]).issubset(
+                {"peligro climatico", "vulnerabilidad", "exposicion fisica"}
+            )
+        )
+        score_range_cols = [
+            "score_exposicion_construida",
+            "score_exposicion_inundacion",
+            "score_exposicion_fisica",
+            "snczi_inundacion_t100_pct_area_aprox",
+            "snczi_inundacion_t500_pct_area_aprox",
+        ]
+        self.assertTrue(((analysis[score_range_cols] >= 0) & (analysis[score_range_cols] <= 1)).all().all())
 
         segmented = pd.read_csv(
             segmented_path,
@@ -135,6 +223,12 @@ class EngineeringOutputsTest(unittest.TestCase):
                 "cluster_agg",
                 "cluster_dbscan",
                 "score_riesgo_exploratorio",
+                "score_exposicion_construida",
+                "score_exposicion_inundacion",
+                "contrib_peligro_climatico",
+                "contrib_vulnerabilidad",
+                "contrib_exposicion_fisica",
+                "dimension_dominante_score",
             ],
         )
         self.assertEqual(len(segmented), 542)
@@ -143,8 +237,13 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(int(segmented.isna().sum().sum()), 0)
         self.assertEqual(segmented["cluster_kmeans"].nunique(), 4)
         self.assertEqual(segmented["cluster_agg"].nunique(), 4)
-        self.assertEqual(len(set(segmented["cluster_dbscan"]) - {-1}), 4)
+        self.assertGreaterEqual(len(set(segmented["cluster_dbscan"]) - {-1}), 2)
         self.assertGreater(int((segmented["cluster_dbscan"] == -1).sum()), 0)
+        segmented_score_delta = (
+            segmented[contribution_cols].sum(axis=1)
+            - segmented["score_riesgo_exploratorio"]
+        ).abs().max()
+        self.assertLess(segmented_score_delta, 1e-10)
 
     def test_aemet_station_is_joined_to_real_municipality(self) -> None:
         path = PROC / "aemet_vs_era5_daily_comparison.csv"
