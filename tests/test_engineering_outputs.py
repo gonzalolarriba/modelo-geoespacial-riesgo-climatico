@@ -9,6 +9,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "DATA" / "PROCESSED"
+MODEL_OUT = ROOT / "output" / "modelado"
 
 
 class EngineeringOutputsTest(unittest.TestCase):
@@ -225,6 +226,9 @@ class EngineeringOutputsTest(unittest.TestCase):
                 "score_riesgo_exploratorio",
                 "score_exposicion_construida",
                 "score_exposicion_inundacion",
+                "rf_score_riesgo_pred",
+                "rf_score_riesgo_residuo",
+                "rf_score_riesgo_error_abs",
                 "contrib_peligro_climatico",
                 "contrib_vulnerabilidad",
                 "contrib_exposicion_fisica",
@@ -244,6 +248,25 @@ class EngineeringOutputsTest(unittest.TestCase):
             - segmented["score_riesgo_exploratorio"]
         ).abs().max()
         self.assertLess(segmented_score_delta, 1e-10)
+        self.assertTrue(segmented["rf_score_riesgo_pred"].between(0, 1).all())
+        self.assertGreaterEqual(segmented["rf_score_riesgo_error_abs"].min(), 0)
+        self.assertLess(segmented["rf_score_riesgo_error_abs"].mean(), 0.05)
+
+        rf_importance_path = MODEL_OUT / "rf_score_feature_importance.csv"
+        self.assertTrue(rf_importance_path.exists(), f"No existe {rf_importance_path}")
+        rf_importance = pd.read_csv(
+            rf_importance_path,
+            usecols=[
+                "variable",
+                "bloque",
+                "importancia_rf",
+                "importancia_permutacion_media",
+            ],
+        )
+        self.assertGreaterEqual(len(rf_importance), 10)
+        self.assertEqual(rf_importance["variable"].nunique(), len(rf_importance))
+        self.assertGreater(rf_importance["importancia_rf"].sum(), 0)
+        self.assertGreater(rf_importance["importancia_permutacion_media"].max(), 0)
 
     def test_aemet_station_is_joined_to_real_municipality(self) -> None:
         path = PROC / "aemet_vs_era5_daily_comparison.csv"
