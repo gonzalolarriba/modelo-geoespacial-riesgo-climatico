@@ -10,6 +10,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "DATA" / "PROCESSED"
 MODEL_OUT = ROOT / "output" / "modelado"
+BUSINESS_OUT = ROOT / "output" / "negocio"
 
 
 class EngineeringOutputsTest(unittest.TestCase):
@@ -267,6 +268,50 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(rf_importance["variable"].nunique(), len(rf_importance))
         self.assertGreater(rf_importance["importancia_rf"].sum(), 0)
         self.assertGreater(rf_importance["importancia_permutacion_media"].max(), 0)
+
+    def test_dana_2024_reference_and_business_outputs_contract(self) -> None:
+        reference_path = PROC / "dana_2024_municipios_afectados_boe.csv"
+        validation_path = BUSINESS_OUT / "dana_2024_validacion_municipal.csv"
+        priority_path = BUSINESS_OUT / "dana_2024_resumen_prioridad.csv"
+        cluster_path = BUSINESS_OUT / "dana_2024_resumen_cluster.csv"
+        metrics_path = BUSINESS_OUT / "dana_2024_metricas_contraste.csv"
+
+        for path in [reference_path, validation_path, priority_path, cluster_path, metrics_path]:
+            self.assertTrue(path.exists(), f"No existe {path}")
+
+        reference = pd.read_csv(reference_path)
+        self.assertEqual(len(reference), 78)
+        self.assertEqual(reference["municipio_boe"].nunique(), 78)
+        self.assertEqual(int(reference["ambito_tfg_cv"].sum()), 75)
+        self.assertTrue(reference["afectado_dana_2024_boe"].all())
+
+        validation = pd.read_csv(
+            validation_path,
+            usecols=[
+                "municipio",
+                "afectado_dana_2024_boe",
+                "prioridad_negocio",
+                "cluster_kmeans",
+                "rank_riesgo_exploratorio",
+                "score_riesgo_exploratorio",
+            ],
+        )
+        self.assertEqual(len(validation), 542)
+        self.assertEqual(validation["municipio"].nunique(), 542)
+        self.assertEqual(int(validation["afectado_dana_2024_boe"].sum()), 75)
+        self.assertEqual(int(validation.isna().sum().sum()), 0)
+        self.assertTrue(validation["score_riesgo_exploratorio"].between(0, 1).all())
+        self.assertEqual(int(validation["rank_riesgo_exploratorio"].min()), 1)
+        self.assertEqual(int(validation["rank_riesgo_exploratorio"].max()), 542)
+
+        priority = pd.read_csv(priority_path)
+        cluster = pd.read_csv(cluster_path)
+        metrics = pd.read_csv(metrics_path)
+        self.assertEqual(int(priority["municipios_dana"].sum()), 75)
+        self.assertEqual(int(cluster["municipios_dana"].sum()), 75)
+        self.assertGreater(int(priority["municipios_dana"].max()), 0)
+        self.assertGreater(int(cluster["municipios_dana"].max()), 0)
+        self.assertIn("Municipios BOE en ambito CV", set(metrics["metrica"]))
 
     def test_aemet_station_is_joined_to_real_municipality(self) -> None:
         path = PROC / "aemet_vs_era5_daily_comparison.csv"
