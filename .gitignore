@@ -6,4 +6,5 @@ outputs/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+apps/__marimo__/
 desktop.ini
