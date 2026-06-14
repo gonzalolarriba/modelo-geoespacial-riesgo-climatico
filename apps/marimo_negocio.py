@@ -46,7 +46,9 @@ def _():
 @app.cell
 def _(Path, pd):
     root = Path(__file__).resolve().parents[1]
-    data_path = root / "DATA" / "PROCESSED" / "dataset_cv_municipios_segmentado.csv"
+    business_data_path = root / "DATA" / "PROCESSED" / "dataset_cv_municipios_negocio.csv"
+    segmented_data_path = root / "DATA" / "PROCESSED" / "dataset_cv_municipios_segmentado.csv"
+    data_path = business_data_path if business_data_path.exists() else segmented_data_path
     _dana_reference_path = (
         root / "DATA" / "PROCESSED" / "dana_2024_municipios_afectados_boe.csv"
     )
@@ -102,14 +104,6 @@ def _(df_dana_boe, df_segmentado, pd, re, unicodedata):
             return "Media"
         return "Baja"
 
-    quantiles_prioridad = {
-        "riesgo_p90": df_segmentado["score_riesgo_exploratorio"].quantile(0.90),
-        "riesgo_p75": df_segmentado["score_riesgo_exploratorio"].quantile(0.75),
-        "riesgo_p50": df_segmentado["score_riesgo_exploratorio"].quantile(0.50),
-        "peligro_p75": df_segmentado["score_peligro_climatico_ampliado"].quantile(0.75),
-        "vulnerabilidad_p75": df_segmentado["score_vulnerabilidad"].quantile(0.75),
-        "exposicion_p75": df_segmentado["score_exposicion_fisica"].quantile(0.75),
-    }
     order_fields = {
         "Riesgo exploratorio": "score_riesgo_exploratorio",
         "Peligro climatico ampliado": "score_peligro_climatico_ampliado",
@@ -134,27 +128,51 @@ def _(df_dana_boe, df_segmentado, pd, re, unicodedata):
     }
 
     df_negocio = df_segmentado.copy()
-    df_negocio["municipio_key_dana"] = df_negocio["municipio"].map(normalizar_municipio)
-    df_negocio["cluster_descripcion"] = df_negocio["cluster_kmeans"].map(cluster_labels)
-    df_negocio["prioridad_negocio"] = df_negocio.apply(
-        asignar_prioridad_negocio,
-        axis=1,
-        quantiles=quantiles_prioridad,
+    df_negocio["cluster_descripcion"] = df_negocio.get(
+        "perfil_negocio_kmeans",
+        df_negocio["cluster_kmeans"].map(cluster_labels),
     )
+    if "prioridad_negocio" not in df_negocio.columns:
+        quantiles_prioridad = {
+            "riesgo_p90": df_negocio["score_riesgo_exploratorio"].quantile(0.90),
+            "riesgo_p75": df_negocio["score_riesgo_exploratorio"].quantile(0.75),
+            "riesgo_p50": df_negocio["score_riesgo_exploratorio"].quantile(0.50),
+            "peligro_p75": df_negocio["score_peligro_climatico_ampliado"].quantile(0.75),
+            "vulnerabilidad_p75": df_negocio["score_vulnerabilidad"].quantile(0.75),
+            "exposicion_p75": df_negocio["score_exposicion_fisica"].quantile(0.75),
+        }
+        df_negocio["prioridad_negocio"] = df_negocio.apply(
+            asignar_prioridad_negocio,
+            axis=1,
+            quantiles=quantiles_prioridad,
+        )
     df_negocio["municipio_singular_dbscan"] = df_negocio["cluster_dbscan"].eq(-1)
     df_negocio["prioridad_negocio"] = pd.Categorical(
         df_negocio["prioridad_negocio"],
         categories=priority_order,
         ordered=True,
     )
-    df_negocio["rank_riesgo_exploratorio"] = (
-        df_negocio["score_riesgo_exploratorio"]
-        .rank(method="min", ascending=False)
-        .astype(int)
-    )
+    if "rank_riesgo_exploratorio" not in df_negocio.columns:
+        df_negocio["rank_riesgo_exploratorio"] = (
+            df_negocio["score_riesgo_exploratorio"]
+            .rank(method="min", ascending=False)
+            .astype(int)
+        )
 
-    dana_reference_available = not df_dana_boe.empty
-    if dana_reference_available:
+    if "afectado_dana_2024_boe" in df_negocio.columns:
+        if df_negocio["afectado_dana_2024_boe"].dtype == object:
+            df_negocio["afectado_dana_2024_boe"] = (
+                df_negocio["afectado_dana_2024_boe"]
+                .astype(str)
+                .str.lower()
+                .isin(["true", "1", "si", "sí"])
+            )
+        dana_reference_available = True
+    else:
+        df_negocio["municipio_key_dana"] = df_negocio["municipio"].map(normalizar_municipio)
+        dana_reference_available = not df_dana_boe.empty
+
+    if "afectado_dana_2024_boe" not in df_negocio.columns and dana_reference_available:
         df_dana_cv = df_dana_boe[df_dana_boe["ambito_tfg_cv"].astype(bool)].copy()
         df_dana_cv["municipio_key_dana"] = df_dana_cv["municipio_boe"].map(
             normalizar_municipio
@@ -173,7 +191,7 @@ def _(df_dana_boe, df_segmentado, pd, re, unicodedata):
             how="left",
         )
         df_negocio["afectado_dana_2024_boe"] = df_negocio["municipio_boe"].notna()
-    else:
+    elif "afectado_dana_2024_boe" not in df_negocio.columns:
         df_negocio["municipio_boe"] = ""
         df_negocio["observacion_boe"] = ""
         df_negocio["periodo_evento"] = ""
@@ -181,7 +199,13 @@ def _(df_dana_boe, df_segmentado, pd, re, unicodedata):
         df_negocio["afectado_dana_2024_boe"] = False
 
     for col in ["municipio_boe", "observacion_boe", "periodo_evento", "fuente_url"]:
+        if col not in df_negocio.columns:
+            df_negocio[col] = ""
         df_negocio[col] = df_negocio[col].fillna("")
+
+    order_fields = {
+        label: column for label, column in order_fields.items() if column in df_negocio.columns
+    }
 
     return (
         cluster_colors,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import py_compile
 import sqlite3
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "DATA" / "PROCESSED"
 MODEL_OUT = ROOT / "output" / "modelado"
 BUSINESS_OUT = ROOT / "output" / "negocio"
+MARIMO_APP = ROOT / "apps" / "marimo_negocio.py"
 
 
 class EngineeringOutputsTest(unittest.TestCase):
@@ -165,6 +167,7 @@ class EngineeringOutputsTest(unittest.TestCase):
     def test_analysis_and_modeling_outputs_contract(self) -> None:
         analysis_path = PROC / "dataset_cv_municipios_analisis_municipal.csv"
         segmented_path = PROC / "dataset_cv_municipios_segmentado.csv"
+        analysis_output_dir = ROOT / "output" / "analisis"
         self.assertTrue(analysis_path.exists(), f"No existe {analysis_path}")
         self.assertTrue(segmented_path.exists(), f"No existe {segmented_path}")
 
@@ -214,6 +217,39 @@ class EngineeringOutputsTest(unittest.TestCase):
             "snczi_inundacion_t500_pct_area_aprox",
         ]
         self.assertTrue(((analysis[score_range_cols] >= 0) & (analysis[score_range_cols] <= 1)).all().all())
+
+        expected_analysis_artifacts = [
+            "trazabilidad_analisis_dato.csv",
+            "auditoria_granularidad.csv",
+            "catalogo_variables_analisis.csv",
+            "diseno_scores.csv",
+            "descomposicion_score_dimension_dominante.csv",
+            "descomposicion_score_top_municipios.csv",
+            "sensibilidad_score_spearman.csv",
+            "sensibilidad_score_solape_top25.csv",
+            "sensibilidad_score_top10.csv",
+            "resumen_scores_analisis.csv",
+            "manifest_artefactos_analisis.csv",
+            "puente_analisis_modelado.csv",
+        ]
+        for artifact_name in expected_analysis_artifacts:
+            artifact_path = analysis_output_dir / artifact_name
+            self.assertTrue(artifact_path.exists(), f"No existe {artifact_path}")
+
+        manifest = pd.read_csv(analysis_output_dir / "manifest_artefactos_analisis.csv")
+        self.assertGreaterEqual(len(manifest), 8)
+        self.assertEqual(
+            set(manifest.columns),
+            {"artefacto", "ruta", "contenido", "uso_posterior"},
+        )
+        self.assertIn("dataset_cv_municipios_analisis_municipal.csv", set(manifest["artefacto"]))
+
+        handoff = pd.read_csv(analysis_output_dir / "puente_analisis_modelado.csv")
+        self.assertEqual(len(handoff), 4)
+        self.assertEqual(
+            set(handoff.columns),
+            {"bloque", "variables_clave", "uso_en_modelado", "precaucion"},
+        )
 
         segmented = pd.read_csv(
             segmented_path,
@@ -297,12 +333,24 @@ class EngineeringOutputsTest(unittest.TestCase):
 
     def test_dana_2024_reference_and_business_outputs_contract(self) -> None:
         reference_path = PROC / "dana_2024_municipios_afectados_boe.csv"
+        business_dataset_path = PROC / "dataset_cv_municipios_negocio.csv"
+        business_artifact_path = BUSINESS_OUT / "dataset_municipal_negocio.csv"
+        business_manifest_path = BUSINESS_OUT / "manifest_artefactos_negocio.csv"
         validation_path = BUSINESS_OUT / "dana_2024_validacion_municipal.csv"
         priority_path = BUSINESS_OUT / "dana_2024_resumen_prioridad.csv"
         cluster_path = BUSINESS_OUT / "dana_2024_resumen_cluster.csv"
         metrics_path = BUSINESS_OUT / "dana_2024_metricas_contraste.csv"
 
-        for path in [reference_path, validation_path, priority_path, cluster_path, metrics_path]:
+        for path in [
+            reference_path,
+            business_dataset_path,
+            business_artifact_path,
+            business_manifest_path,
+            validation_path,
+            priority_path,
+            cluster_path,
+            metrics_path,
+        ]:
             self.assertTrue(path.exists(), f"No existe {path}")
 
         reference = pd.read_csv(reference_path)
@@ -330,6 +378,43 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(int(validation["rank_riesgo_exploratorio"].min()), 1)
         self.assertEqual(int(validation["rank_riesgo_exploratorio"].max()), 542)
 
+        business = pd.read_csv(
+            business_dataset_path,
+            usecols=[
+                "municipio",
+                "prioridad_negocio",
+                "perfil_negocio_kmeans",
+                "afectado_dana_2024_boe",
+                "municipio_boe",
+                "observacion_boe",
+                "periodo_evento",
+                "fuente",
+                "fuente_url",
+                "rank_riesgo_exploratorio",
+                "score_riesgo_exploratorio",
+                "score_contexto_climatico_extendido",
+                "rf_score_riesgo_pred",
+                "rf_score_riesgo_error_abs",
+            ],
+        )
+        self.assertEqual(len(business), 542)
+        self.assertEqual(business["municipio"].nunique(), 542)
+        self.assertEqual(int(business.isna().sum().sum()), 0)
+        self.assertEqual(int(business["afectado_dana_2024_boe"].sum()), 75)
+        self.assertEqual(set(business["prioridad_negocio"]), {"Muy alta", "Alta", "Media", "Baja"})
+        self.assertEqual(int(business["rank_riesgo_exploratorio"].min()), 1)
+        self.assertEqual(int(business["rank_riesgo_exploratorio"].max()), 542)
+        self.assertTrue(business["score_riesgo_exploratorio"].between(0, 1).all())
+        self.assertTrue(business["rf_score_riesgo_pred"].between(0, 1).all())
+        self.assertGreaterEqual(business["rf_score_riesgo_error_abs"].min(), 0)
+
+        business_artifact = pd.read_csv(business_artifact_path)
+        self.assertEqual(len(business_artifact), 542)
+
+        business_manifest = pd.read_csv(business_manifest_path)
+        self.assertGreaterEqual(len(business_manifest), 7)
+        self.assertIn("dataset_cv_municipios_negocio.csv", set(business_manifest["artefacto"]))
+
         priority = pd.read_csv(priority_path)
         cluster = pd.read_csv(cluster_path)
         metrics = pd.read_csv(metrics_path)
@@ -338,6 +423,14 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertGreater(int(priority["municipios_dana"].max()), 0)
         self.assertGreater(int(cluster["municipios_dana"].max()), 0)
         self.assertIn("Municipios BOE en ambito CV", set(metrics["metrica"]))
+
+    def test_marimo_dashboard_compiles_and_uses_business_dataset(self) -> None:
+        self.assertTrue(MARIMO_APP.exists(), f"No existe {MARIMO_APP}")
+        py_compile.compile(str(MARIMO_APP), doraise=True)
+
+        app_source = MARIMO_APP.read_text(encoding="utf-8")
+        self.assertIn("dataset_cv_municipios_negocio.csv", app_source)
+        self.assertIn("dataset_cv_municipios_segmentado.csv", app_source)
 
     def test_aemet_station_is_joined_to_real_municipality(self) -> None:
         path = PROC / "aemet_vs_era5_daily_comparison.csv"
