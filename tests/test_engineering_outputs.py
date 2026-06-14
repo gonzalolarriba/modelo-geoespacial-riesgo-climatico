@@ -11,6 +11,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "DATA" / "PROCESSED"
+ENGINEERING_OUT = ROOT / "output" / "ingenieria_dato"
 MODEL_OUT = ROOT / "output" / "modelado"
 BUSINESS_OUT = ROOT / "output" / "negocio"
 MARIMO_APP = ROOT / "apps" / "marimo_negocio.py"
@@ -65,6 +66,61 @@ class EngineeringOutputsTest(unittest.TestCase):
             script_path = ROOT / entry["path"]
             self.assertTrue(script_path.exists(), f"No existe {entry['path']}")
             py_compile.compile(str(script_path), doraise=True)
+
+    def test_engineering_artifact_manifest_contract(self) -> None:
+        manifest_path = ENGINEERING_OUT / "manifest_artefactos_ingenieria_dato.csv"
+        traceability_path = ENGINEERING_OUT / "trazabilidad_transformaciones_ingenieria_dato.csv"
+        self.assertTrue(manifest_path.exists(), f"No existe {manifest_path}")
+        self.assertTrue(traceability_path.exists(), f"No existe {traceability_path}")
+
+        manifest = pd.read_csv(manifest_path)
+        self.assertEqual(
+            set(manifest.columns),
+            {
+                "artefacto",
+                "ruta",
+                "fase",
+                "granularidad",
+                "contenido",
+                "control_calidad",
+                "uso_posterior",
+                "existe",
+                "tamano_mb",
+            },
+        )
+        self.assertGreaterEqual(len(manifest), 10)
+        expected_artifacts = {
+            "dataset_cv_municipios.csv",
+            "dataset_cv_municipios_enriched.csv",
+            "dataset_cv_municipios_climate_extended.csv",
+            "ine_contexto_municipal.csv",
+            "aemet_vs_era5_daily_comparison.csv",
+            "catastro_buildings_cv_summary.csv",
+            "snczi_flood_exposure_municipal.csv",
+            "dataset_cv_municipios_enriched_catastro_snczi.csv",
+        }
+        self.assertTrue(expected_artifacts.issubset(set(manifest["artefacto"])))
+        self.assertTrue(manifest["existe"].astype(bool).all())
+        for artifact_path in manifest["ruta"]:
+            self.assertTrue((ROOT / artifact_path).exists(), f"No existe {artifact_path}")
+
+        traceability = pd.read_csv(traceability_path)
+        self.assertEqual(
+            set(traceability.columns),
+            {
+                "bloque",
+                "entrada",
+                "transformacion",
+                "salida",
+                "antes",
+                "despues",
+                "decision_metodologica",
+                "control_calidad",
+            },
+        )
+        self.assertGreaterEqual(len(traceability), 7)
+        required_blocks = {"ERA5-Land base", "INE municipal", "AEMET validacion", "Catastro", "SNCZI"}
+        self.assertTrue(required_blocks.issubset(set(traceability["bloque"])))
 
     def test_daily_dataset_contract(self) -> None:
         path = PROC / "dataset_cv_municipios.csv"

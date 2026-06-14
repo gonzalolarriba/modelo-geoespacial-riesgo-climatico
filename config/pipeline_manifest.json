@@ -28,9 +28,12 @@
         "DATA/PROCESSED/ine_contexto_municipal.csv",
         "DATA/PROCESSED/aemet_vs_era5_daily_comparison.csv",
         "DATA/PROCESSED/catastro_buildings_cv_summary.csv",
-        "DATA/PROCESSED/snczi_flood_exposure_municipal.csv"
+        "DATA/PROCESSED/snczi_flood_exposure_municipal.csv",
+        "output/ingenieria_dato/manifest_artefactos_ingenieria_dato.csv",
+        "output/ingenieria_dato/trazabilidad_transformaciones_ingenieria_dato.csv"
       ],
       "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_engineering_artifact_manifest_contract",
         "tests.test_engineering_outputs.EngineeringOutputsTest.test_enriched_dataset_contract",
         "tests.test_engineering_outputs.EngineeringOutputsTest.test_extended_climate_dataset_contract",
         "tests.test_engineering_outputs.EngineeringOutputsTest.test_catastro_outputs_contract",
