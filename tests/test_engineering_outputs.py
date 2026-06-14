@@ -269,6 +269,32 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertGreater(rf_importance["importancia_rf"].sum(), 0)
         self.assertGreater(rf_importance["importancia_permutacion_media"].max(), 0)
 
+        model_comparison_path = MODEL_OUT / "model_comparison.csv"
+        self.assertTrue(model_comparison_path.exists(), f"No existe {model_comparison_path}")
+        model_comparison = pd.read_csv(
+            model_comparison_path,
+            usecols=[
+                "modelo",
+                "silhouette",
+                "davies_bouldin",
+                "calinski_harabasz",
+                "clusters",
+                "ruido_pct",
+            ],
+        )
+        self.assertEqual(
+            set(model_comparison["modelo"]),
+            {"KMeans", "Agglomerative", "DBSCAN (core)"},
+        )
+        self.assertEqual(
+            int(model_comparison.loc[model_comparison["modelo"] == "KMeans", "clusters"].iloc[0]),
+            4,
+        )
+        self.assertGreaterEqual(
+            float(model_comparison.loc[model_comparison["modelo"] == "DBSCAN (core)", "ruido_pct"].iloc[0]),
+            0,
+        )
+
     def test_dana_2024_reference_and_business_outputs_contract(self) -> None:
         reference_path = PROC / "dana_2024_municipios_afectados_boe.csv"
         validation_path = BUSINESS_OUT / "dana_2024_validacion_municipal.csv"
