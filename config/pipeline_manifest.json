@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "purpose": "Machine-readable execution map for the TFG reproducibility pipeline.",
+  "pipeline_steps": [
+    {
+      "order": 1,
+      "phase": "ingenieria_dato_base",
+      "source_type": "notebook",
+      "source": "notebooks/notebook_1_ing_dato.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_1_ing_dato.ipynb",
+      "primary_outputs": [
+        "DATA/PROCESSED/dataset_cv_municipios.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_daily_dataset_contract"
+      ],
+      "role": "Builds the daily municipal ERA5-Land base for 2019-2024."
+    },
+    {
+      "order": 2,
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "source_type": "notebook",
+      "source": "notebooks/notebook_2_ing_fuentes_complementarias.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_2_ing_fuentes_complementarias.ipynb",
+      "primary_outputs": [
+        "DATA/PROCESSED/dataset_cv_municipios_enriched.csv",
+        "DATA/PROCESSED/dataset_cv_municipios_climate_extended.csv",
+        "DATA/PROCESSED/ine_contexto_municipal.csv",
+        "DATA/PROCESSED/aemet_vs_era5_daily_comparison.csv",
+        "DATA/PROCESSED/catastro_buildings_cv_summary.csv",
+        "DATA/PROCESSED/snczi_flood_exposure_municipal.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_enriched_dataset_contract",
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_extended_climate_dataset_contract",
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_catastro_outputs_contract",
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_snczi_outputs_contract",
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_aemet_station_is_joined_to_real_municipality"
+      ],
+      "role": "Adds ERA5-Land extended variables, INE, AEMET validation, Catastro and SNCZI exposure."
+    },
+    {
+      "order": 3,
+      "phase": "analisis_dato",
+      "source_type": "notebook",
+      "source": "notebooks/notebook_3_analisis_dato.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_3_analisis_dato.ipynb",
+      "primary_outputs": [
+        "DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv",
+        "output/analisis/manifest_artefactos_analisis.csv",
+        "output/analisis/puente_analisis_modelado.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_analysis_and_modeling_outputs_contract"
+      ],
+      "role": "Aggregates to municipal scale, builds exploratory scores and exports analysis artifacts."
+    },
+    {
+      "order": 4,
+      "phase": "modelado_segmentacion",
+      "source_type": "notebook",
+      "source": "notebooks/notebook_4_modelado_segmentacion.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_4_modelado_segmentacion.ipynb",
+      "primary_outputs": [
+        "DATA/PROCESSED/dataset_cv_municipios_segmentado.csv",
+        "output/modelado/model_comparison.csv",
+        "output/modelado/model_selection_summary.csv",
+        "output/modelado/rf_score_feature_importance.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_analysis_and_modeling_outputs_contract"
+      ],
+      "role": "Segments municipalities with KMeans, contrasts models and explains the score with Random Forest."
+    },
+    {
+      "order": 5,
+      "phase": "analisis_negocio",
+      "source_type": "script",
+      "source": "scripts/an_negocio/build_dana_2024_reference.py",
+      "command_hint": "python scripts/an_negocio/build_dana_2024_reference.py",
+      "primary_outputs": [
+        "DATA/PROCESSED/dana_2024_municipios_afectados_boe.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
+      ],
+      "role": "Builds the official DANA 2024 BOE reference used as external business contrast."
+    },
+    {
+      "order": 6,
+      "phase": "analisis_negocio",
+      "source_type": "notebook",
+      "source": "notebooks/notebook_5_an_negocio.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_5_an_negocio.ipynb",
+      "primary_outputs": [
+        "DATA/PROCESSED/dataset_cv_municipios_negocio.csv",
+        "output/negocio/manifest_artefactos_negocio.csv",
+        "output/negocio/dataset_municipal_negocio.csv",
+        "output/negocio/dana_2024_validacion_municipal.csv"
+      ],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
+      ],
+      "role": "Translates segmentation and scores into business priorities, DANA contrast and final business dataset."
+    },
+    {
+      "order": 7,
+      "phase": "visualizacion_interactiva",
+      "source_type": "app",
+      "source": "apps/marimo_negocio.py",
+      "command_hint": "python -m marimo run apps/marimo_negocio.py",
+      "primary_outputs": [],
+      "validation_tests": [
+        "tests.test_engineering_outputs.EngineeringOutputsTest.test_marimo_dashboard_compiles_and_uses_business_dataset"
+      ],
+      "role": "Interactive dashboard that consumes the final business dataset when available."
+    }
+  ],
+  "scripts": [
+    {
+      "path": "scripts/ing_dato/download_era5_land_monthly.py",
+      "phase": "ingenieria_dato_base",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/read_era5_land_basic.py",
+      "phase": "ingenieria_dato_base",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/merge_era5_land_csvs.py",
+      "phase": "ingenieria_dato_base",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/validate_era5_land_merged_csv.py",
+      "phase": "ingenieria_dato_base",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/download_era5_land_extended_monthly.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/read_era5_land_extended_basic.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/merge_era5_land_extended_csvs.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/build_era5_extended_municipal_daily.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/prepare_ine_municipal.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/validate_aemet_vs_era5.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/download_catastro_buildings_cv.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/build_catastro_buildings_cv_summary.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/build_snczi_flood_exposure_wms.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/analisis_dato/add_openmeteo_altitude.py",
+      "phase": "analisis_dato",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/an_negocio/build_dana_2024_reference.py",
+      "phase": "analisis_negocio",
+      "role": "operational"
+    },
+    {
+      "path": "scripts/ing_dato/download_era5_land_test.py",
+      "phase": "ingenieria_dato_base",
+      "role": "auxiliary"
+    },
+    {
+      "path": "scripts/ing_dato/inspect_municipal_shapefile.py",
+      "phase": "ingenieria_dato_base",
+      "role": "auxiliary"
+    },
+    {
+      "path": "scripts/ing_dato/download_catastro_buildings_pilot.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "auxiliary"
+    },
+    {
+      "path": "scripts/ing_dato/read_catastro_buildings_basic.py",
+      "phase": "ingenieria_dato_fuentes_complementarias",
+      "role": "auxiliary"
+    },
+    {
+      "path": "scripts/reporting/generate_app_summary_pdf.py",
+      "phase": "reporting",
+      "role": "auxiliary"
+    }
+  ]
+}

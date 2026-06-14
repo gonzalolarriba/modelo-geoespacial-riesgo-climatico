@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import py_compile
 import sqlite3
 import unittest
@@ -13,9 +14,58 @@ PROC = ROOT / "DATA" / "PROCESSED"
 MODEL_OUT = ROOT / "output" / "modelado"
 BUSINESS_OUT = ROOT / "output" / "negocio"
 MARIMO_APP = ROOT / "apps" / "marimo_negocio.py"
+PIPELINE_MANIFEST = ROOT / "config" / "pipeline_manifest.json"
 
 
 class EngineeringOutputsTest(unittest.TestCase):
+    def test_pipeline_manifest_contract(self) -> None:
+        self.assertTrue(PIPELINE_MANIFEST.exists(), f"No existe {PIPELINE_MANIFEST}")
+
+        manifest = json.loads(PIPELINE_MANIFEST.read_text(encoding="utf-8"))
+        steps = manifest["pipeline_steps"]
+        scripts = manifest["scripts"]
+
+        orders = [step["order"] for step in steps]
+        self.assertEqual(orders, sorted(orders))
+        self.assertEqual(orders, list(range(1, len(steps) + 1)))
+
+        allowed_source_types = {"notebook", "script", "app"}
+        declared_outputs = set()
+        for step in steps:
+            self.assertIn(step["source_type"], allowed_source_types)
+            self.assertTrue((ROOT / step["source"]).exists(), f"No existe {step['source']}")
+            self.assertTrue(step["validation_tests"], f"Paso sin test declarado: {step['source']}")
+
+            if step["source_type"] != "app":
+                self.assertTrue(step["primary_outputs"], f"Paso sin salida declarada: {step['source']}")
+            for output_path in step["primary_outputs"]:
+                declared_outputs.add(output_path)
+                self.assertTrue((ROOT / output_path).exists(), f"No existe {output_path}")
+
+        expected_key_outputs = {
+            "DATA/PROCESSED/dataset_cv_municipios.csv",
+            "DATA/PROCESSED/dataset_cv_municipios_enriched.csv",
+            "DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv",
+            "DATA/PROCESSED/dataset_cv_municipios_segmentado.csv",
+            "DATA/PROCESSED/dataset_cv_municipios_negocio.csv",
+        }
+        self.assertTrue(expected_key_outputs.issubset(declared_outputs))
+
+        allowed_script_roles = {"operational", "auxiliary"}
+        declared_scripts = {entry["path"] for entry in scripts}
+        actual_scripts = {
+            str(path.relative_to(ROOT)).replace("\\", "/")
+            for path in (ROOT / "scripts").rglob("*.py")
+            if path.name != "__init__.py"
+        }
+        self.assertEqual(declared_scripts, actual_scripts)
+
+        for entry in scripts:
+            self.assertIn(entry["role"], allowed_script_roles)
+            script_path = ROOT / entry["path"]
+            self.assertTrue(script_path.exists(), f"No existe {entry['path']}")
+            py_compile.compile(str(script_path), doraise=True)
+
     def test_daily_dataset_contract(self) -> None:
         path = PROC / "dataset_cv_municipios.csv"
         self.assertTrue(path.exists(), f"No existe {path}")
