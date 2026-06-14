@@ -1,3 +1,20 @@
+"""Construye la referencia oficial de municipios afectados por la DANA 2024.
+
+Uso en el pipeline:
+    Script operativo de Analisis de Negocio. Genera una tabla pequena y
+    reproducible a partir del anexo del BOE usado como contraste externo.
+
+Entradas:
+    Lista transcrita del Real Decreto-ley 6/2024, BOE-A-2024-22928.
+
+Salida:
+    DATA/PROCESSED/dana_2024_municipios_afectados_boe.csv
+
+Notas:
+    La tabla identifica municipios damnificados, pero no contiene polizas,
+    importes asegurados ni microdatos de siniestros.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
