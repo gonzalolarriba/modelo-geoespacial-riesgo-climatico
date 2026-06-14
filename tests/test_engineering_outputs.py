@@ -329,6 +329,7 @@ class EngineeringOutputsTest(unittest.TestCase):
             "auditoria_granularidad.csv",
             "catalogo_variables_analisis.csv",
             "diseno_scores.csv",
+            "auditoria_variables_score.csv",
             "descomposicion_score_dimension_dominante.csv",
             "descomposicion_score_top_municipios.csv",
             "sensibilidad_score_spearman.csv",
@@ -349,6 +350,40 @@ class EngineeringOutputsTest(unittest.TestCase):
             {"artefacto", "ruta", "contenido", "uso_posterior"},
         )
         self.assertIn("dataset_cv_municipios_analisis_municipal.csv", set(manifest["artefacto"]))
+        self.assertIn("auditoria_variables_score.csv", set(manifest["artefacto"]))
+
+        score_audit = pd.read_csv(analysis_output_dir / "auditoria_variables_score.csv")
+        self.assertEqual(
+            set(score_audit.columns),
+            {
+                "dimension",
+                "variable_origen",
+                "score_generado",
+                "orientacion",
+                "interpretacion_alta",
+                "municipios",
+                "nulos_originales",
+                "pct_nulos_originales",
+                "min_original",
+                "mediana_original",
+                "max_original",
+                "normalizacion",
+                "tratamiento_nulos",
+            },
+        )
+        self.assertGreaterEqual(len(score_audit), 12)
+        self.assertTrue(
+            {
+                "renta_media_hogar",
+                "densidad_viviendas_catastro_km2",
+                "snczi_inundacion_t100_pct_area_aprox",
+            }.issubset(set(score_audit["variable_origen"]))
+        )
+        self.assertEqual(set(score_audit["normalizacion"]), {"min-max 0-1"})
+        renta_row = score_audit.loc[score_audit["variable_origen"] == "renta_media_hogar"].iloc[0]
+        self.assertEqual(renta_row["orientacion"], "inversa")
+        self.assertGreaterEqual(int(renta_row["nulos_originales"]), 1)
+        self.assertIn("mediana", renta_row["tratamiento_nulos"])
 
         handoff = pd.read_csv(analysis_output_dir / "puente_analisis_modelado.csv")
         self.assertEqual(len(handoff), 4)

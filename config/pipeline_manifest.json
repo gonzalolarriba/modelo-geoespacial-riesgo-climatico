@@ -50,6 +50,7 @@
       "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_3_analisis_dato.ipynb",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv",
+        "output/analisis/auditoria_variables_score.csv",
         "output/analisis/manifest_artefactos_analisis.csv",
         "output/analisis/puente_analisis_modelado.csv"
       ],
