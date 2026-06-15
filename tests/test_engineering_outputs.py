@@ -347,10 +347,11 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertGreaterEqual(len(manifest), 8)
         self.assertEqual(
             set(manifest.columns),
-            {"artefacto", "ruta", "contenido", "uso_posterior"},
+            {"artefacto", "ruta", "contenido", "uso_posterior", "existe"},
         )
         self.assertIn("dataset_cv_municipios_analisis_municipal.csv", set(manifest["artefacto"]))
         self.assertIn("auditoria_variables_score.csv", set(manifest["artefacto"]))
+        self.assertTrue(manifest["existe"].astype(bool).all())
 
         score_audit = pd.read_csv(analysis_output_dir / "auditoria_variables_score.csv")
         self.assertEqual(
