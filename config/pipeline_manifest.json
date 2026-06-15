@@ -105,7 +105,11 @@
         "DATA/PROCESSED/dataset_cv_municipios_negocio.csv",
         "output/negocio/manifest_artefactos_negocio.csv",
         "output/negocio/dataset_municipal_negocio.csv",
-        "output/negocio/dana_2024_validacion_municipal.csv"
+        "output/negocio/dana_2024_validacion_municipal.csv",
+        "output/negocio/auditoria_calidad_negocio.csv",
+        "output/negocio/recomendaciones_ejecutivas_negocio.csv",
+        "output/negocio/matriz_accion_prioridad.csv",
+        "output/negocio/matriz_usos_aseguradores.csv"
       ],
       "validation_tests": [
         "tests.test_engineering_outputs.EngineeringOutputsTest.test_dana_2024_reference_and_business_outputs_contract"

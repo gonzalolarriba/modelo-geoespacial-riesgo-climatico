@@ -555,6 +555,10 @@ class EngineeringOutputsTest(unittest.TestCase):
         business_dataset_path = PROC / "dataset_cv_municipios_negocio.csv"
         business_artifact_path = BUSINESS_OUT / "dataset_municipal_negocio.csv"
         business_manifest_path = BUSINESS_OUT / "manifest_artefactos_negocio.csv"
+        business_quality_path = BUSINESS_OUT / "auditoria_calidad_negocio.csv"
+        recommendations_path = BUSINESS_OUT / "recomendaciones_ejecutivas_negocio.csv"
+        action_matrix_path = BUSINESS_OUT / "matriz_accion_prioridad.csv"
+        insurance_matrix_path = BUSINESS_OUT / "matriz_usos_aseguradores.csv"
         validation_path = BUSINESS_OUT / "dana_2024_validacion_municipal.csv"
         priority_path = BUSINESS_OUT / "dana_2024_resumen_prioridad.csv"
         cluster_path = BUSINESS_OUT / "dana_2024_resumen_cluster.csv"
@@ -565,6 +569,10 @@ class EngineeringOutputsTest(unittest.TestCase):
             business_dataset_path,
             business_artifact_path,
             business_manifest_path,
+            business_quality_path,
+            recommendations_path,
+            action_matrix_path,
+            insurance_matrix_path,
             validation_path,
             priority_path,
             cluster_path,
@@ -601,6 +609,7 @@ class EngineeringOutputsTest(unittest.TestCase):
             business_dataset_path,
             usecols=[
                 "municipio",
+                "provincia",
                 "prioridad_negocio",
                 "perfil_negocio_kmeans",
                 "afectado_dana_2024_boe",
@@ -619,6 +628,7 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(len(business), 542)
         self.assertEqual(business["municipio"].nunique(), 542)
         self.assertEqual(int(business.isna().sum().sum()), 0)
+        self.assertEqual(set(business["provincia"]), {"Alicante", "Castellon", "Valencia"})
         self.assertEqual(int(business["afectado_dana_2024_boe"].sum()), 75)
         self.assertEqual(set(business["prioridad_negocio"]), {"Muy alta", "Alta", "Media", "Baja"})
         self.assertEqual(int(business["rank_riesgo_exploratorio"].min()), 1)
@@ -631,8 +641,24 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(len(business_artifact), 542)
 
         business_manifest = pd.read_csv(business_manifest_path)
-        self.assertGreaterEqual(len(business_manifest), 7)
+        self.assertGreaterEqual(len(business_manifest), 17)
+        self.assertEqual(
+            set(business_manifest.columns),
+            {"artefacto", "ruta", "contenido", "uso", "existe"},
+        )
         self.assertIn("dataset_cv_municipios_negocio.csv", set(business_manifest["artefacto"]))
+        self.assertIn("auditoria_calidad_negocio.csv", set(business_manifest["artefacto"]))
+        self.assertIn("recomendaciones_ejecutivas_negocio.csv", set(business_manifest["artefacto"]))
+        self.assertTrue(business_manifest["existe"].astype(bool).all())
+
+        quality = pd.read_csv(business_quality_path)
+        self.assertEqual(set(quality.columns), {"control", "valor", "esperado", "resultado"})
+        self.assertTrue(quality["resultado"].astype(bool).all())
+        self.assertIn("provincia_informada", set(quality["control"]))
+
+        recommendations = pd.read_csv(recommendations_path)
+        self.assertGreaterEqual(len(recommendations), 5)
+        self.assertIn("accion_recomendada", set(recommendations.columns))
 
         priority = pd.read_csv(priority_path)
         cluster = pd.read_csv(cluster_path)
