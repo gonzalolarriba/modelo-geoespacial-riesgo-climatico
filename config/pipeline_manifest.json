@@ -67,8 +67,13 @@
       "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_4_modelado_segmentacion.ipynb",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_segmentado.csv",
+        "output/modelado/model_feature_catalog.csv",
+        "output/modelado/model_feature_exclusions.csv",
+        "output/modelado/model_preprocessing_audit.csv",
         "output/modelado/model_comparison.csv",
         "output/modelado/model_selection_summary.csv",
+        "output/modelado/rf_score_metrics.csv",
+        "output/modelado/manifest_artefactos_modelado.csv",
         "output/modelado/rf_score_feature_importance.csv"
       ],
       "validation_tests": [

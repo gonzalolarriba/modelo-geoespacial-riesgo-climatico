@@ -430,6 +430,70 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertGreaterEqual(segmented["rf_score_riesgo_error_abs"].min(), 0)
         self.assertLess(segmented["rf_score_riesgo_error_abs"].mean(), 0.05)
 
+        model_feature_catalog_path = MODEL_OUT / "model_feature_catalog.csv"
+        model_feature_exclusions_path = MODEL_OUT / "model_feature_exclusions.csv"
+        preprocessing_audit_path = MODEL_OUT / "model_preprocessing_audit.csv"
+        rf_metrics_path = MODEL_OUT / "rf_score_metrics.csv"
+        model_manifest_path = MODEL_OUT / "manifest_artefactos_modelado.csv"
+        for path in [
+            model_feature_catalog_path,
+            model_feature_exclusions_path,
+            preprocessing_audit_path,
+            rf_metrics_path,
+            model_manifest_path,
+        ]:
+            self.assertTrue(path.exists(), f"No existe {path}")
+
+        model_feature_catalog = pd.read_csv(model_feature_catalog_path)
+        self.assertEqual(
+            set(model_feature_catalog.columns),
+            {"bloque", "variable", "dimension", "origen", "motivo_inclusion", "limitacion"},
+        )
+        self.assertGreaterEqual(len(model_feature_catalog), 18)
+        self.assertEqual(model_feature_catalog["variable"].nunique(), len(model_feature_catalog))
+        self.assertNotIn("score_riesgo_exploratorio", set(model_feature_catalog["variable"]))
+        self.assertTrue(
+            {
+                "precip_p99",
+                "renta_media_hogar",
+                "densidad_viviendas_catastro_km2",
+                "snczi_inundacion_t500_pct_area_aprox",
+            }.issubset(set(model_feature_catalog["variable"]))
+        )
+
+        model_feature_exclusions = pd.read_csv(model_feature_exclusions_path)
+        self.assertGreaterEqual(len(model_feature_exclusions), 5)
+        self.assertIn("Scores compuestos", set(model_feature_exclusions["tipo_variable"]))
+
+        preprocessing_audit = pd.read_csv(preprocessing_audit_path)
+        self.assertEqual(
+            set(preprocessing_audit.columns),
+            {
+                "variable",
+                "bloque",
+                "nulos_originales",
+                "pct_nulos_originales",
+                "imputacion",
+                "valor_imputacion",
+                "transformacion",
+                "media_tras_preprocesado",
+                "std_tras_preprocesado",
+            },
+        )
+        self.assertEqual(set(preprocessing_audit["variable"]), set(model_feature_catalog["variable"]))
+        renta_preprocessing = preprocessing_audit.loc[
+            preprocessing_audit["variable"] == "renta_media_hogar"
+        ].iloc[0]
+        self.assertGreaterEqual(int(renta_preprocessing["nulos_originales"]), 1)
+        self.assertEqual(renta_preprocessing["imputacion"], "mediana municipal")
+        self.assertIn(
+            "log1p tras imputacion",
+            set(preprocessing_audit.loc[
+                preprocessing_audit["variable"] == "densidad_poblacion",
+                "transformacion",
+            ]),
+        )
+
         rf_importance_path = MODEL_OUT / "rf_score_feature_importance.csv"
         self.assertTrue(rf_importance_path.exists(), f"No existe {rf_importance_path}")
         rf_importance = pd.read_csv(
@@ -445,6 +509,14 @@ class EngineeringOutputsTest(unittest.TestCase):
         self.assertEqual(rf_importance["variable"].nunique(), len(rf_importance))
         self.assertGreater(rf_importance["importancia_rf"].sum(), 0)
         self.assertGreater(rf_importance["importancia_permutacion_media"].max(), 0)
+
+        rf_metrics = pd.read_csv(rf_metrics_path)
+        self.assertEqual(set(rf_metrics.columns), {"metrica", "valor"})
+        self.assertTrue({"R2 test", "MAE test", "MAE total"}.issubset(set(rf_metrics["metrica"])))
+        self.assertLess(
+            float(rf_metrics.loc[rf_metrics["metrica"] == "MAE test", "valor"].iloc[0]),
+            0.05,
+        )
 
         model_comparison_path = MODEL_OUT / "model_comparison.csv"
         self.assertTrue(model_comparison_path.exists(), f"No existe {model_comparison_path}")
@@ -471,6 +543,12 @@ class EngineeringOutputsTest(unittest.TestCase):
             float(model_comparison.loc[model_comparison["modelo"] == "DBSCAN (core)", "ruido_pct"].iloc[0]),
             0,
         )
+
+        model_manifest = pd.read_csv(model_manifest_path)
+        self.assertGreaterEqual(len(model_manifest), 8)
+        self.assertIn("dataset_cv_municipios_segmentado.csv", set(model_manifest["artefacto"]))
+        self.assertIn("rf_score_feature_importance.csv", set(model_manifest["artefacto"]))
+        self.assertTrue(model_manifest["existe"].astype(bool).all())
 
     def test_dana_2024_reference_and_business_outputs_contract(self) -> None:
         reference_path = PROC / "dana_2024_municipios_afectados_boe.csv"
