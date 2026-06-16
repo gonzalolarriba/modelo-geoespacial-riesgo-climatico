@@ -49,6 +49,7 @@ def _(Path, pd):
     business_data_path = root / "DATA" / "PROCESSED" / "dataset_cv_municipios_negocio.csv"
     segmented_data_path = root / "DATA" / "PROCESSED" / "dataset_cv_municipios_segmentado.csv"
     data_path = business_data_path if business_data_path.exists() else segmented_data_path
+    rf_reading_path = root / "output" / "negocio" / "lectura_rf_negocio.csv"
     _dana_reference_path = (
         root / "DATA" / "PROCESSED" / "dana_2024_municipios_afectados_boe.csv"
     )
@@ -58,7 +59,10 @@ def _(Path, pd):
         if _dana_reference_path.exists()
         else pd.DataFrame()
     )
-    return data_path, df_dana_boe, df_segmentado
+    df_rf_reading = (
+        pd.read_csv(rf_reading_path) if rf_reading_path.exists() else pd.DataFrame()
+    )
+    return data_path, df_dana_boe, df_rf_reading, df_segmentado
 
 
 @app.cell
@@ -111,6 +115,7 @@ def _(df_dana_boe, df_segmentado, pd, re, unicodedata):
         "Exposicion fisica": "score_exposicion_fisica",
         "Exposicion inundable": "score_exposicion_inundacion",
         "Contexto climatico extendido": "score_contexto_climatico_extendido",
+        "Error RF score": "rf_score_riesgo_error_abs",
     }
     priority_order = ["Muy alta", "Alta", "Media", "Baja"]
     map_color_modes = ["Prioridad", "Cluster", "DANA 2024"]
@@ -386,6 +391,11 @@ def _(dana_reference_available, data_path, df_filtrado, df_negocio, mo):
     peligro_medio = df_filtrado["score_peligro_climatico_ampliado"].mean()
     vulnerabilidad_media = df_filtrado["score_vulnerabilidad"].mean()
     exposicion_media = df_filtrado["score_exposicion_fisica"].mean()
+    _rf_error_medio = (
+        df_filtrado["rf_score_riesgo_error_abs"].mean()
+        if "rf_score_riesgo_error_abs" in df_filtrado.columns
+        else None
+    )
     _dana_municipios = int(df_filtrado["afectado_dana_2024_boe"].sum())
     _dana_pct = _dana_municipios / municipios * 100 if municipios else 0
 
@@ -397,20 +407,133 @@ def _(dana_reference_available, data_path, df_filtrado, df_negocio, mo):
             if dana_reference_available
             else "Referencia no disponible"
         )
-        resumen_metricas = f"""
-        **Dataset:** `{data_path.name}`
-
-        **Municipios seleccionados:** {municipios} de {total_municipios}
-
-        | Metrica | Valor medio |
-        |---|---:|
-        | Riesgo exploratorio | {riesgo_medio:.3f} |
-        | Peligro climatico ampliado | {peligro_medio:.3f} |
-        | Vulnerabilidad | {vulnerabilidad_media:.3f} |
-        | Exposicion fisica | {exposicion_media:.3f} |
-        | Afectados DANA 2024 BOE | {_dana_label} |
-        """
+        _metric_rows = [
+            "| Metrica | Valor medio |",
+            "|---|---:|",
+            f"| Riesgo exploratorio | {riesgo_medio:.3f} |",
+            f"| Peligro climatico ampliado | {peligro_medio:.3f} |",
+            f"| Vulnerabilidad | {vulnerabilidad_media:.3f} |",
+            f"| Exposicion fisica | {exposicion_media:.3f} |",
+        ]
+        if _rf_error_medio is not None:
+            _metric_rows.append(f"| Error medio RF score | {_rf_error_medio:.3f} |")
+        _metric_rows.append(f"| Afectados DANA 2024 BOE | {_dana_label} |")
+        resumen_metricas = (
+            f"**Dataset:** `{data_path.name}`\n\n"
+            f"**Municipios seleccionados:** {municipios} de {total_municipios}\n\n"
+            + "\n".join(_metric_rows)
+        )
     mo.md(resumen_metricas)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Lectura explicativa RF
+    """)
+    return
+
+
+@app.cell
+def _(df_filtrado, df_rf_reading, mo, plt):
+    rf_required_cols = {
+        "municipio",
+        "score_riesgo_exploratorio",
+        "rf_score_riesgo_pred",
+        "rf_score_riesgo_residuo",
+        "rf_score_riesgo_error_abs",
+        "rf_score_split",
+    }
+    if df_filtrado.empty:
+        rf_panel = mo.md("No hay municipios para calcular la lectura RF con los filtros seleccionados.")
+    elif not rf_required_cols.issubset(df_filtrado.columns):
+        rf_panel = mo.md(
+            "Lectura RF no disponible en el dataset cargado. Ejecuta antes los notebooks 4 y 5."
+        )
+    else:
+        _rf_error_medio = df_filtrado["rf_score_riesgo_error_abs"].mean()
+        _rf_error_max = df_filtrado["rf_score_riesgo_error_abs"].max()
+        _test_count = int(df_filtrado["rf_score_split"].astype(str).eq("test").sum())
+        _train_count = int(df_filtrado["rf_score_split"].astype(str).eq("train").sum())
+
+        _summary_rows = []
+        if not df_rf_reading.empty and {"aspecto", "valor"}.issubset(df_rf_reading.columns):
+            for _, row in df_rf_reading.iterrows():
+                if row["aspecto"] in {
+                    "rendimiento_test",
+                    "bloque_dominante",
+                    "variables_mas_influyentes",
+                    "estado_shap",
+                }:
+                    _summary_rows.append(f"| {row['aspecto']} | {row['valor']} |")
+        summary_table = "\n".join(_summary_rows)
+        summary_text = (
+            "El Random Forest es auxiliar: reproduce el score exploratorio y ayuda a "
+            "interpretar que variables lo explican mejor. No predice siniestros reales.\n\n"
+            "| Metrica RF en la seleccion | Valor |\n"
+            "|---|---:|\n"
+            f"| Error absoluto medio | {_rf_error_medio:.3f} |\n"
+            f"| Error absoluto maximo | {_rf_error_max:.3f} |\n"
+            f"| Municipios train/test | {_train_count}/{_test_count} |"
+            + (
+                "\n\n| Sintesis global RF | Valor |\n"
+                "|---|---|\n"
+                f"{summary_table}"
+                if summary_table
+                else ""
+            )
+        )
+
+        rf_top_errors = (
+            df_filtrado.sort_values("rf_score_riesgo_error_abs", ascending=False)
+            .head(10)
+            .copy()
+        )
+        fig_rf_error, ax_rf_error = plt.subplots(figsize=(7.5, 3.6))
+        _plot_data = rf_top_errors.sort_values("rf_score_riesgo_error_abs")
+        ax_rf_error.barh(
+            _plot_data["municipio"],
+            _plot_data["rf_score_riesgo_error_abs"],
+            color="#6f6f6f",
+        )
+        ax_rf_error.set_title("Municipios con mayor error RF del score")
+        ax_rf_error.set_xlabel("Error absoluto")
+        ax_rf_error.set_ylabel("")
+        fig_rf_error.tight_layout()
+
+        rf_table_cols = [
+            "municipio",
+            "score_riesgo_exploratorio",
+            "rf_score_riesgo_pred",
+            "rf_score_riesgo_residuo",
+            "rf_score_riesgo_error_abs",
+            "rf_score_split",
+        ]
+        rf_table_labels = {
+            "municipio": "Municipio",
+            "score_riesgo_exploratorio": "Score",
+            "rf_score_riesgo_pred": "Prediccion RF",
+            "rf_score_riesgo_residuo": "Residuo RF",
+            "rf_score_riesgo_error_abs": "Error RF",
+            "rf_score_split": "Particion",
+        }
+        rf_table = (
+            rf_top_errors[rf_table_cols]
+            .rename(columns=rf_table_labels)
+            .reset_index(drop=True)
+            .round(3)
+        )
+
+        rf_panel = mo.vstack(
+            [
+                mo.md(summary_text),
+                fig_rf_error,
+                mo.ui.table(rf_table, page_size=10),
+            ]
+        )
+
+    rf_panel
     return
 
 
@@ -711,6 +834,8 @@ def _(df_ranking, mo):
         "score_exposicion_inundacion",
         "score_exposicion_fisica",
         "score_contexto_climatico_extendido",
+        "rf_score_riesgo_error_abs",
+        "rf_score_split",
         "poblacion_total",
         "densidad_poblacion",
         "densidad_edificios_km2",
@@ -729,11 +854,14 @@ def _(df_ranking, mo):
         "score_exposicion_inundacion": "Exposicion inundable",
         "score_exposicion_fisica": "Exposicion fisica",
         "score_contexto_climatico_extendido": "Contexto climatico",
+        "rf_score_riesgo_error_abs": "Error RF",
+        "rf_score_split": "Particion RF",
         "poblacion_total": "Poblacion",
         "densidad_poblacion": "Densidad poblacion",
         "densidad_edificios_km2": "Densidad edificios",
         "ratio_huella_edificada_pct": "Huella edificada (%)",
     }
+    ranking_columns = [col for col in ranking_columns if col in df_ranking.columns]
     df_tabla_ranking = (
         df_ranking[ranking_columns]
         .rename(columns=column_labels)
