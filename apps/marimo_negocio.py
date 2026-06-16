@@ -823,6 +823,7 @@ def _(mo):
 def _(df_ranking, mo):
     ranking_columns = [
         "municipio",
+        "cod_ine",
         "prioridad_negocio",
         "cluster_descripcion",
         "afectado_dana_2024_boe",
@@ -843,6 +844,7 @@ def _(df_ranking, mo):
     ]
     column_labels = {
         "municipio": "Municipio",
+        "cod_ine": "COD INE",
         "prioridad_negocio": "Prioridad",
         "cluster_descripcion": "Cluster",
         "afectado_dana_2024_boe": "DANA 2024 BOE",
