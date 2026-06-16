@@ -464,6 +464,7 @@ def _(df_filtrado, df_rf_reading, mo, plt):
                     "rendimiento_test",
                     "bloque_dominante",
                     "variables_mas_influyentes",
+                    "variables_mas_influyentes_shap",
                     "estado_shap",
                 }:
                     _summary_rows.append(f"| {row['aspecto']} | {row['valor']} |")
