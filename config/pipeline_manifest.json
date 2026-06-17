@@ -224,11 +224,6 @@
       "path": "scripts/ing_dato/read_catastro_buildings_basic.py",
       "phase": "ingenieria_dato_fuentes_complementarias",
       "role": "auxiliary"
-    },
-    {
-      "path": "scripts/reporting/generate_app_summary_pdf.py",
-      "phase": "reporting",
-      "role": "auxiliary"
     }
   ]
 }

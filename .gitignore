@@ -8,5 +8,3 @@ __pycache__/
 .ipynb_checkpoints/
 apps/__marimo__/
 desktop.ini
-docs/
-documentacion_ufv/
