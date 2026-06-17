@@ -4,10 +4,11 @@ geopandas
 matplotlib
 seaborn
 xarray
+cdsapi
 scikit-learn
 contextily
 folium
-shap
+shap==0.52.0
 pyproj
 fiona
 rtree
@@ -15,6 +16,7 @@ shapely
 lightgbm
 xgboost
 requests
+reportlab
 jupyter
 notebook
 rasterio
