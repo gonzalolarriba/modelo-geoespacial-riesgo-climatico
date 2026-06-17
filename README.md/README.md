@@ -1,88 +1,272 @@
-# TFG — Análisis Climático, Riesgo Asegurador y GeoAnalytics
-**Comunidad Valenciana — ERA5 + IGN + Machine Learning + Mapas GIS**
+# Modelo geoespacial exploratorio de riesgo climatico para seguros de hogar
 
-Este repositorio contiene el desarrollo completo del pipeline de datos, ingeniería de variables, modelado e inteligencia geoespacial realizado en el Trabajo Fin de Grado.
+Autor: Gonzalo Larriba Delicado
 
----
+Trabajo Fin de Grado orientado a construir una base analitica municipal para
+estudiar riesgo climatico en seguros de hogar en la Comunidad Valenciana a
+partir de datos abiertos.
 
-## 📌 Estructura del proyecto
-.
-├── data/
-│   ├── raw/                → Datos originales (ERA5, AEMET opcional)
-│   ├── geo/                → Geometrías IGN (municipios CV)
-│   ├── processed/          → Datos generados por Notebooks 1–3
-│   └── outputs/            → Resultados finales (mapas, geojson, métricas)
-├── notebook_1_ing_dato.ipynb
-├── notebook_2_feature_engineering.ipynb
-├── notebook_3_modelado.ipynb
-└── notebook_4_mapas.ipynb
+El proyecto integra informacion climatica, territorial, socioeconomica,
+catastral e hidrologica para generar indicadores municipales, segmentar
+territorios y traducir los resultados a una lectura de negocio asegurador.
 
----
+## Resumen del alcance
 
-## 🧱 **Pipeline (de principio a fin)**
+El anteproyecto original planteaba un enfoque cercano a la prediccion de
+siniestralidad. Durante el desarrollo se reformula el alcance de forma
+metodologicamente honesta: no existe una base publica completa y util de
+siniestros de hogar a escala municipal, por lo que el trabajo no predice
+siniestros reales ni calcula primas.
 
-### **Notebook 1 — Ingeniería del dato**
-- Carga de geometría municipal (IGN)
-- Descarga/lectura de ERA5 (NetCDF → DataFrame)
-- Asignación ERA5 → Municipios
-- Agregados base por municipio
-- **Salida:** `data/processed/dataset_cv_municipios.csv`
+El resultado final es un modelo exploratorio geoespacial basado en open data.
+Su objetivo es priorizar territorios, identificar patrones municipales,
+explicar que variables influyen en un indice de riesgo construido y preparar
+una base que podria calibrarse en el futuro con datos internos de una
+aseguradora o del Consorcio de Compensacion de Seguros.
 
-### **Notebook 2 — Feature Engineering Climático + Geoespacial + Scoring**
-- Conversión de unidades ERA5, precipitación, temperatura, viento
-- Acumulados móviles 24/48/72h
-- Percentiles extremos (P95/P99)
-- Distancia a costa y capital provincial
-- Índice Compuesto de Riesgo Climático (ICRC 0–100)
-- **Salida:** `data/processed/dataset_cv_municipios_features.csv`
+## Que hace el proyecto
 
-### **Notebook 3 — Modelado predictivo**
-- Preparación del conjunto de modelado
-- Comparación de modelos: RandomForest, HGB, Linear Regression, XGBoost*, LightGBM*, MLP
-- Interpretabilidad con SHAP
-- Detección de anomalías con Isolation Forest
-- PCA para visualización
-- **Salidas:**  
-  - `comparativa_modelos.csv`  
-  - `anomalias_isolation_forest.csv`  
-  - `pca_proyeccion.csv`
+- Construye una base diaria municipio-clima para 542 municipios de la Comunidad
+  Valenciana.
+- Integra variables climaticas de ERA5-Land y variables extendidas de contexto
+  fisico.
+- Enriquece la base con INE, Catastro, SNCZI, altitud y geometria municipal.
+- Contrasta ERA5-Land con AEMET de forma exploratoria.
+- Crea indicadores municipales de peligro climatico, vulnerabilidad y
+  exposicion.
+- Segmenta municipios con KMeans, Agglomerative Clustering y DBSCAN.
+- Explica el score exploratorio mediante Random Forest, permutation importance
+  y SHAP.
+- Incorpora la DANA 2024 como contraste externo post-evento.
+- Genera salidas de negocio, dashboard Marimo y tablas preparadas para Power BI
+  o Excel.
 
-### **Notebook 4 — Mapas (GIS)**
-- Carga de municipios + dataset enriquecido
-- Clustering municipal (K‑Means y DBSCAN)
-- Mapas estáticos (GeoPandas + Contextily)
-- Mapas interactivos (Folium)
-- Ranking de anomalías climáticas
-- **Salidas:**  
-  - `municipios_clu_anom.geojson`  
-  - `mapa_municipios_interactivo.html`
+## Que no hace el proyecto
 
----
+- No predice siniestros reales de hogar.
+- No calcula primas ni tarifas actuariales.
+- No sustituye un modelo interno de una aseguradora.
+- No interpreta DANA 2024 como validacion actuarial.
+- No afirma causalidad; las relaciones son exploratorias y dependen de los
+  indicadores construidos.
 
-## 🧰 **Requisitos de software**
+## Fuentes de datos
 
-Las dependencias están en `requirements.txt`.
+| Fuente | Uso principal |
+|---|---|
+| ERA5-Land | Variables climaticas historicas y extendidas |
+| IGN / lineas limite | Geometria municipal |
+| INE | Poblacion, densidad, edad y renta |
+| AEMET OpenData | Contraste externo puntual frente a ERA5-Land |
+| Catastro | Edificacion, viviendas, huella edificada y densidad constructiva |
+| SNCZI / IDEE | Exposicion territorial aproximada a zonas inundables |
+| Open-Meteo / IGN | Altitud municipal aproximada |
+| BOE DANA 2024 | Contraste externo post-evento |
 
-### Recomendación:  
-Crear un entorno virtual:
+## Pipeline de notebooks
 
-```bash
-python -m venv .venv
-source .venv/bin/activate      # Linux/Mac
-.venv\Scripts\activate         # Windows
-Instalar dependencias:
-Shellpip install -r requirements.txtMostrar más líneas
+Los notebooks deben ejecutarse en orden.
 
-🔍 Reproducción del proyecto
-Ejecutar los notebooks en este orden:
+| Notebook | Fase | Salida principal |
+|---|---|---|
+| `notebook_1_ing_dato.ipynb` | Ingenieria del dato base | `DATA/PROCESSED/dataset_cv_municipios.csv` |
+| `notebook_2_ing_fuentes_complementarias.ipynb` | Fuentes complementarias | `DATA/PROCESSED/dataset_cv_municipios_enriched_catastro_snczi.csv` |
+| `notebook_3_analisis_dato.ipynb` | Analisis del dato | `DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv` |
+| `notebook_4_modelado_segmentacion.ipynb` | Modelado y segmentacion | `DATA/PROCESSED/dataset_cv_municipios_segmentado.csv` |
+| `notebook_5_an_negocio.ipynb` | Analisis de negocio | `DATA/PROCESSED/dataset_cv_municipios_negocio.csv` |
 
-notebook_1_ing_dato.ipynb
-notebook_2_feature_engineering.ipynb
-notebook_3_modelado.ipynb
-notebook_4_mapas.ipynb
+## Modelos y tecnicas
 
+- **KMeans**: modelo principal de segmentacion territorial.
+- **Agglomerative Clustering**: contraste metodologico de estabilidad.
+- **DBSCAN**: lectura auxiliar de densidad espacial y municipios singulares.
+- **Random Forest Regressor**: modelo auxiliar para explicar
+  `score_riesgo_exploratorio`.
+- **Permutation importance**: ranking de variables influyentes en el Random
+  Forest.
+- **SHAP**: explicabilidad adicional del Random Forest auxiliar.
+- **PCA**: diagnostico visual de la estructura de variables.
 
+El Random Forest no predice siniestralidad real. Explica un indice exploratorio
+construido a partir de datos abiertos.
 
-✒️ Autor
-Gonzalo Larriba Delicado
-Trabajo Fin de Grado – Comunidad Valenciana
+## Estructura del repositorio
+
+```text
+apps/
+  marimo_negocio.py                         Dashboard exploratorio
+
+DATA/
+  RAW/                                      Datos brutos locales
+  EXTERNAL/                                 Fuentes externas auxiliares
+  PROCESSED/                                Datasets generados por el pipeline
+
+notebooks/
+  notebook_1_ing_dato.ipynb                 Ingenieria del dato base
+  notebook_2_ing_fuentes_complementarias.ipynb
+  notebook_3_analisis_dato.ipynb
+  notebook_4_modelado_segmentacion.ipynb
+  notebook_5_an_negocio.ipynb
+
+scripts/
+  ing_dato/                                 Descargas, lecturas y validaciones
+  analisis_dato/                            Apoyos al analisis
+  an_negocio/                               Referencia DANA 2024
+  reporting/                                Informes auxiliares
+
+output/
+  ingenieria_dato/                          Manifests y trazabilidad
+  analisis/                                 Auditorias y diseno de scores
+  modelado/                                 Comparacion de modelos, RF y SHAP
+  negocio/                                  Salidas de negocio y export BI
+
+tests/
+  test_engineering_outputs.py               Controles automaticos principales
+```
+
+Nota: `DATA/`, `output/`, `outputs/`, `venv/` y `tmp/` estan ignorados por Git
+por su tamano o por ser artefactos generados localmente.
+
+## Instalacion
+
+En Windows, desde la raiz del proyecto:
+
+```powershell
+python -m venv venv
+venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+El proyecto se ha validado con `shap==0.52.0` para la explicabilidad del Random
+Forest.
+
+## Ejecucion recomendada
+
+1. Activar el entorno virtual.
+2. Asegurar que las fuentes necesarias estan disponibles en `DATA/`.
+3. Ejecutar los notebooks en orden: 1, 2, 3, 4 y 5.
+4. Revisar los manifests generados en `output/`.
+5. Abrir el dashboard Marimo si se quiere explorar el resultado final.
+
+### Dashboard Marimo
+
+```powershell
+venv\Scripts\activate
+python -m marimo run apps\marimo_negocio.py --port 2718 --headless --no-token
+```
+
+Abrir en el navegador:
+
+```text
+http://localhost:2718
+```
+
+El dashboard permite filtrar municipios por cluster, prioridad, DANA 2024,
+singularidad DBSCAN y ordenar rankings por distintas metricas, incluido el
+error del Random Forest.
+
+## Salidas principales
+
+### Datasets municipales
+
+- `DATA/PROCESSED/dataset_cv_municipios.csv`
+- `DATA/PROCESSED/dataset_cv_municipios_enriched_catastro_snczi.csv`
+- `DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv`
+- `DATA/PROCESSED/dataset_cv_municipios_segmentado.csv`
+- `DATA/PROCESSED/dataset_cv_municipios_negocio.csv`
+
+### Artefactos de modelado
+
+- `output/modelado/model_comparison.csv`
+- `output/modelado/model_selection_summary.csv`
+- `output/modelado/rf_score_metrics.csv`
+- `output/modelado/rf_score_feature_importance.csv`
+- `output/modelado/rf_score_block_importance.csv`
+- `output/modelado/rf_score_shap_importance.csv`
+- `output/modelado/rf_score_predictions.csv`
+- `output/modelado/manifest_artefactos_modelado.csv`
+
+### Artefactos de negocio
+
+- `output/negocio/lectura_rf_negocio.csv`
+- `output/negocio/dana_2024_metricas_contraste.csv`
+- `output/negocio/municipios_prioritarios_negocio.csv`
+- `output/negocio/recomendaciones_ejecutivas_negocio.csv`
+- `output/negocio/manifest_artefactos_negocio.csv`
+
+### Exportacion BI
+
+El Notebook 5 genera un paquete de tablas planas para Power BI o Excel:
+
+```text
+output/negocio/powerbi_export/
+```
+
+Incluye:
+
+- `municipios_negocio_powerbi.csv`
+- `resumen_prioridad_powerbi.csv`
+- `dana_resumen_prioridad_powerbi.csv`
+- `rf_importancia_shap_powerbi.csv`
+- `rf_importancia_permutacion_powerbi.csv`
+- `diccionario_campos_powerbi.csv`
+- `manifest_powerbi_export.csv`
+
+## Validacion
+
+Comprobar scripts Python:
+
+```powershell
+Get-ChildItem -Path scripts -Recurse -Filter *.py | ForEach-Object {
+    venv\Scripts\python.exe -m py_compile $_.FullName
+}
+```
+
+Ejecutar tests:
+
+```powershell
+venv\Scripts\python.exe -m unittest tests.test_engineering_outputs
+```
+
+Validar Marimo:
+
+```powershell
+venv\Scripts\python.exe -m marimo check apps\marimo_negocio.py
+```
+
+Exportar una version HTML del dashboard:
+
+```powershell
+venv\Scripts\python.exe -m marimo export html apps\marimo_negocio.py -o tmp\marimo_negocio_check.html --no-include-code -f
+```
+
+## Decisiones metodologicas clave
+
+1. **Ausencia de siniestros reales**
+   El proyecto no fuerza un modelo predictivo sin variable objetivo real. El
+   resultado es exploratorio y se basa en indicadores transparentes.
+
+2. **Score de riesgo exploratorio**
+   El score combina peligro climatico, vulnerabilidad y exposicion. Sus pesos
+   son explicitos y revisables.
+
+3. **Random Forest y SHAP**
+   El Random Forest explica el score construido, no siniestralidad real. SHAP se
+   usa para reforzar la interpretabilidad del indice.
+
+4. **DANA 2024**
+   La DANA 2024 se usa como contraste externo post-evento. No es validacion
+   actuarial ni prueba de prediccion de siniestros.
+
+5. **Dashboard**
+   Marimo se usa como herramienta reproducible de exploracion. El proyecto
+   tambien deja tablas listas para Power BI o Excel.
+
+## Frase de defensa del alcance
+
+Este TFG no pretende cerrar un modelo actuarial de siniestralidad, sino
+construir una base geoespacial trazable y explicable para priorizar territorios
+climaticamente sensibles con datos abiertos. La base queda preparada para una
+calibracion futura si se dispone de datos internos de cartera, polizas,
+capitales asegurados o siniestros reales.
