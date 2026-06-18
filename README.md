@@ -192,7 +192,7 @@ error del Random Forest.
 - `output/negocio/dana_2024_metricas_contraste.csv`
 - `output/negocio/municipios_prioritarios_negocio.csv`
 - `output/negocio/recomendaciones_ejecutivas_negocio.csv`
-- `output/negocio/cierre_rubrica_negocio.csv`
+- `output/negocio/cierre_ejecutivo_negocio.csv`
 - `output/negocio/manifest_artefactos_negocio.csv`
 
 ### Exportacion BI
