@@ -90,7 +90,7 @@ Los notebooks deben ejecutarse en orden.
 El Random Forest no predice siniestralidad real. Explica un indice exploratorio
 construido a partir de datos abiertos.
 
-## Estructura del repositorio
+## Estructura local esperada
 
 ```text
 apps/
@@ -196,6 +196,9 @@ error del Random Forest.
 
 ## Salidas principales
 
+Las siguientes salidas se generan localmente al ejecutar el pipeline. No se
+versionan en Git por tamano y porque son artefactos reproducibles.
+
 ### Datasets municipales
 
 - `DATA/PROCESSED/dataset_cv_municipios.csv`
@@ -292,7 +295,7 @@ venv\Scripts\python.exe -m marimo export html apps\marimo_negocio.py -o tmp\mari
    Marimo se usa como herramienta reproducible de exploracion. El proyecto
    tambien deja tablas listas para Power BI o Excel.
 
-## Frase de defensa del alcance
+## Alcance metodologico
 
 Este TFG no pretende cerrar un modelo actuarial de siniestralidad, sino
 construir una base geoespacial trazable y explicable para priorizar territorios
