@@ -38,8 +38,8 @@ aseguradora o del Consorcio de Compensacion de Seguros.
 - Explica el score exploratorio mediante Random Forest, permutation importance
   y SHAP.
 - Incorpora la DANA 2024 como contraste externo post-evento.
-- Genera salidas de negocio, dashboard Marimo y tablas preparadas para Power BI
-  o Excel.
+- Genera salidas de negocio, dashboard Marimo y tablas planas preparadas para
+  Power BI o Excel.
 
 ## Que no hace el proyecto
 
@@ -117,7 +117,7 @@ output/
   ingenieria_dato/                          Manifests y trazabilidad
   analisis/                                 Auditorias y diseno de scores
   modelado/                                 Comparacion de modelos, RF y SHAP
-  negocio/                                  Salidas de negocio y export BI
+  negocio/                                  Salidas de negocio y exportacion BI/Excel
 
 tests/
   test_engineering_outputs.py               Controles automaticos principales
@@ -227,9 +227,11 @@ versionan en Git por tamano y porque son artefactos reproducibles.
 - `output/negocio/cierre_ejecutivo_negocio.csv`
 - `output/negocio/manifest_artefactos_negocio.csv`
 
-### Exportacion BI
+### Exportacion BI/Excel
 
-El Notebook 5 genera un paquete de tablas planas para Power BI o Excel:
+El Notebook 5 genera un paquete de tablas planas preparado para Power BI o
+Excel. No se incluye un archivo `.pbix`; la visualizacion interactiva
+implementada en el repositorio es el dashboard Marimo.
 
 ```text
 output/negocio/powerbi_export/
@@ -291,9 +293,9 @@ venv\Scripts\python.exe -m marimo export html apps\marimo_negocio.py -o tmp\mari
    La DANA 2024 se usa como contraste externo post-evento. No es validacion
    actuarial ni prueba de prediccion de siniestros.
 
-5. **Dashboard**
-   Marimo se usa como herramienta reproducible de exploracion. El proyecto
-   tambien deja tablas listas para Power BI o Excel.
+5. **Visualizacion**
+   Marimo se usa como dashboard reproducible de exploracion. El proyecto
+   tambien deja tablas planas listas para Power BI o Excel.
 
 ## Alcance metodologico
 

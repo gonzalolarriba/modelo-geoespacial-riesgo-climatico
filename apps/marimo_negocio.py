@@ -1,4 +1,4 @@
-r"""Dashboard opcional para explorar la segmentacion municipal del TFG.
+r"""Dashboard exploratorio para revisar la segmentacion municipal del TFG.
 
 Uso:
     .\venv\Scripts\python.exe -m marimo run apps\marimo_negocio.py
