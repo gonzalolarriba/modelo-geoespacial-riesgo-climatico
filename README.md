@@ -126,6 +126,22 @@ tests/
 Nota: `DATA/`, `output/`, `outputs/`, `venv/` y `tmp/` estan ignorados por Git
 por su tamano o por ser artefactos generados localmente.
 
+## Contenido de la entrega
+
+La entrega del repositorio incluye codigo, notebooks, configuracion, pruebas y
+descripcion tecnica del proyecto:
+
+- `README.md`
+- `requirements.txt`
+- `config/pipeline_manifest.json`
+- `notebooks/`
+- `scripts/`
+- `apps/`
+- `tests/`
+
+No se versionan datos pesados, entornos virtuales ni artefactos generados:
+`DATA/`, `output/`, `outputs/`, `venv/`, `tmp/` y caches locales.
+
 ## Instalacion
 
 En Windows, desde la raiz del proyecto:
@@ -147,6 +163,19 @@ Forest.
 3. Ejecutar los notebooks en orden: 1, 2, 3, 4 y 5.
 4. Revisar los manifests generados en `output/`.
 5. Abrir el dashboard Marimo si se quiere explorar el resultado final.
+
+Comandos reproducibles desde la raiz del proyecto:
+
+```powershell
+venv\Scripts\jupyter.exe nbconvert --to notebook --execute notebooks\notebook_1_ing_dato.ipynb --output notebook_1_ing_dato_executed.ipynb --output-dir tmp --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=2400
+venv\Scripts\jupyter.exe nbconvert --to notebook --execute notebooks\notebook_2_ing_fuentes_complementarias.ipynb --output notebook_2_ing_fuentes_complementarias_executed.ipynb --output-dir tmp --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200
+venv\Scripts\jupyter.exe nbconvert --to notebook --execute notebooks\notebook_3_analisis_dato.ipynb --output notebook_3_analisis_dato_executed.ipynb --output-dir tmp --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200
+venv\Scripts\jupyter.exe nbconvert --to notebook --execute notebooks\notebook_4_modelado_segmentacion.ipynb --output notebook_4_modelado_segmentacion_executed.ipynb --output-dir tmp --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200
+venv\Scripts\jupyter.exe nbconvert --to notebook --execute notebooks\notebook_5_an_negocio.ipynb --output notebook_5_an_negocio_executed.ipynb --output-dir tmp --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200
+```
+
+La salida ejecutada se escribe en `tmp/` para mantener los notebooks originales
+sin outputs versionados.
 
 ### Dashboard Marimo
 

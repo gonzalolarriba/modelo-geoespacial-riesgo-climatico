@@ -7,7 +7,7 @@
       "phase": "ingenieria_dato_base",
       "source_type": "notebook",
       "source": "notebooks/notebook_1_ing_dato.ipynb",
-      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_1_ing_dato.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute notebooks/notebook_1_ing_dato.ipynb --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=2400",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios.csv"
       ],
@@ -21,7 +21,7 @@
       "phase": "ingenieria_dato_fuentes_complementarias",
       "source_type": "notebook",
       "source": "notebooks/notebook_2_ing_fuentes_complementarias.ipynb",
-      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_2_ing_fuentes_complementarias.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute notebooks/notebook_2_ing_fuentes_complementarias.ipynb --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_enriched.csv",
         "DATA/PROCESSED/dataset_cv_municipios_climate_extended.csv",
@@ -47,7 +47,7 @@
       "phase": "analisis_dato",
       "source_type": "notebook",
       "source": "notebooks/notebook_3_analisis_dato.ipynb",
-      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_3_analisis_dato.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute notebooks/notebook_3_analisis_dato.ipynb --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_analisis_municipal.csv",
         "output/analisis/auditoria_variables_score.csv",
@@ -64,7 +64,7 @@
       "phase": "modelado_segmentacion",
       "source_type": "notebook",
       "source": "notebooks/notebook_4_modelado_segmentacion.ipynb",
-      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_4_modelado_segmentacion.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute notebooks/notebook_4_modelado_segmentacion.ipynb --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_segmentado.csv",
         "output/modelado/model_feature_catalog.csv",
@@ -100,7 +100,7 @@
       "phase": "analisis_negocio",
       "source_type": "notebook",
       "source": "notebooks/notebook_5_an_negocio.ipynb",
-      "command_hint": "jupyter nbconvert --to notebook --execute --inplace notebooks/notebook_5_an_negocio.ipynb",
+      "command_hint": "jupyter nbconvert --to notebook --execute notebooks/notebook_5_an_negocio.ipynb --ExecutePreprocessor.startup_timeout=180 --ExecutePreprocessor.timeout=1200",
       "primary_outputs": [
         "DATA/PROCESSED/dataset_cv_municipios_negocio.csv",
         "output/negocio/manifest_artefactos_negocio.csv",
