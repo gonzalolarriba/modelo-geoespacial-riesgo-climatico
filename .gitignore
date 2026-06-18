@@ -3,6 +3,8 @@ venv/
 tmp/
 output/
 outputs/
+docs/
+documentacion_ufv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
