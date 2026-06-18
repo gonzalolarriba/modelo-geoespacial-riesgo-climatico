@@ -18,7 +18,7 @@ MARIMO_APP = ROOT / "apps" / "marimo_negocio.py"
 PIPELINE_MANIFEST = ROOT / "config" / "pipeline_manifest.json"
 
 
-class EngineeringOutputsTest(unittest.TestCase):
+class PipelineOutputsTest(unittest.TestCase):
     def test_pipeline_manifest_contract(self) -> None:
         self.assertTrue(PIPELINE_MANIFEST.exists(), f"No existe {PIPELINE_MANIFEST}")
 

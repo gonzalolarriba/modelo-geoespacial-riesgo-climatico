@@ -12,7 +12,7 @@
         "DATA/PROCESSED/dataset_cv_municipios.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_daily_dataset_contract"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_daily_dataset_contract"
       ],
       "role": "Builds the daily municipal ERA5-Land base for 2019-2024."
     },
@@ -33,12 +33,12 @@
         "output/ingenieria_dato/trazabilidad_transformaciones_ingenieria_dato.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_engineering_artifact_manifest_contract",
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_enriched_dataset_contract",
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_extended_climate_dataset_contract",
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_catastro_outputs_contract",
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_snczi_outputs_contract",
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_aemet_station_is_joined_to_real_municipality"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_engineering_artifact_manifest_contract",
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_enriched_dataset_contract",
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_extended_climate_dataset_contract",
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_catastro_outputs_contract",
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_snczi_outputs_contract",
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_aemet_station_is_joined_to_real_municipality"
       ],
       "role": "Adds ERA5-Land extended variables, INE, AEMET validation, Catastro and SNCZI exposure."
     },
@@ -55,7 +55,7 @@
         "output/analisis/puente_analisis_modelado.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_analysis_and_modeling_outputs_contract"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_analysis_and_modeling_outputs_contract"
       ],
       "role": "Aggregates to municipal scale, builds exploratory scores and exports analysis artifacts."
     },
@@ -77,7 +77,7 @@
         "output/modelado/rf_score_feature_importance.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_analysis_and_modeling_outputs_contract"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_analysis_and_modeling_outputs_contract"
       ],
       "role": "Segments municipalities with KMeans, contrasts models and explains the score with Random Forest."
     },
@@ -91,7 +91,7 @@
         "DATA/PROCESSED/dana_2024_municipios_afectados_boe.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
       ],
       "role": "Builds the official DANA 2024 BOE reference used as external business contrast."
     },
@@ -112,7 +112,7 @@
         "output/negocio/matriz_usos_aseguradores.csv"
       ],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_dana_2024_reference_and_business_outputs_contract"
       ],
       "role": "Translates segmentation and scores into business priorities, DANA contrast and final business dataset."
     },
@@ -124,7 +124,7 @@
       "command_hint": "python -m marimo run apps/marimo_negocio.py",
       "primary_outputs": [],
       "validation_tests": [
-        "tests.test_engineering_outputs.EngineeringOutputsTest.test_marimo_dashboard_compiles_and_uses_business_dataset"
+        "tests.test_pipeline_outputs.PipelineOutputsTest.test_marimo_dashboard_compiles_and_uses_business_dataset"
       ],
       "role": "Interactive dashboard that consumes the final business dataset when available."
     }

@@ -120,7 +120,7 @@ output/
   negocio/                                  Salidas de negocio y exportacion BI/Excel
 
 tests/
-  test_engineering_outputs.py               Controles automaticos principales
+  test_pipeline_outputs.py                  Controles automaticos principales
 ```
 
 Nota: `DATA/`, `output/`, `outputs/`, `venv/` y `tmp/` estan ignorados por Git
@@ -260,7 +260,7 @@ Get-ChildItem -Path scripts -Recurse -Filter *.py | ForEach-Object {
 Ejecutar tests:
 
 ```powershell
-venv\Scripts\python.exe -m unittest tests.test_engineering_outputs
+venv\Scripts\python.exe -m unittest tests.test_pipeline_outputs
 ```
 
 Validar Marimo:
